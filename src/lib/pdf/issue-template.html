@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Tamil:wght@400;700&family=Noto+Sans+Tamil:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm 15mm;
+            @bottom-center {
+                content: counter(page);
+            }
+        }
+
+        body {
+            font-family: 'Noto Serif Tamil', serif;
+            font-size: 16px;
+            line-height: 1.9;
+            color: #1a1a1a;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Noto Sans Tamil', sans-serif;
+            color: #000;
+        }
+
+        /* நீர்க்குறி (Watermark) */
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 100px;
+            color: rgba(0, 0, 0, 0.05);
+            z-index: -1;
+            white-space: nowrap;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* அட்டைப்படம் (Cover Page) */
+        .cover-page {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            page-break-after: always;
+        }
+
+        .cover-image {
+            width: 100%;
+            height: 60%;
+            object-cover: cover;
+            margin-bottom: 30px;
+        }
+
+        .magazine-title {
+            font-size: 60px;
+            font-weight: bold;
+            margin: 0;
+            color: #c0392b; /* சட்ட சிவப்ப நிறம் */
+        }
+
+        .issue-info {
+            font-size: 24px;
+            margin: 20px 0;
+            color: #666;
+        }
+
+        /* பொருளடக்கம் (TOC) */
+        .toc-page {
+            page-break-after: always;
+            padding: 20px 0;
+        }
+
+        .toc-title {
+            font-size: 32px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+
+        .toc-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            border-bottom: 1px dotted #ccc;
+        }
+
+        /* கட்டுரை ஸ்டைல் (Article Style) */
+        .article {
+            page-break-before: always;
+            padding-top: 20px;
+        }
+
+        .article:first-of-type {
+            page-break-before: avoid;
+        }
+
+        .article-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+
+        .article-meta {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .content-type-badge {
+            background: #eee;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .blockquote {
+            border-left: 4px solid #c0392b;
+            background: #fdf6f6;
+            padding: 15px 20px;
+            margin: 25px 0;
+            font-style: normal;
+        }
+
+        /* பேஜ் ஹெடர் & பூட்டர் (Header & Footer) */
+        .page-header {
+            position: fixed;
+            top: -15mm;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #999;
+            border-bottom: 0.5px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .page-footer {
+            position: fixed;
+            bottom: -15mm;
+            width: 100%;
+            text-align: center;
+            font-size: 10px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="watermark">சட்டவிளக்கு</div>
+
+    <div class="cover-page">
+        <img src="{{cover_image_url}}" class="cover-image" />
+        <h1 class="magazine-title">சட்டவிளக்கு</h1>
+        <p class="issue-info">தொகுதி {{volume}} | இதழ் {{issue_number}}</p>
+        <p class="issue-date">{{published_month}}</p>
+        <p class="tagline">சட்டமும் சமூகமும்</p>
+    </div>
+
+    <div class="toc-page">
+        <h2 class="toc-title">பொருளடக்கம்</h2>
+        {{#articles}}
+        <div class="toc-item">
+            <span>{{title}}</span>
+            <span>{{author_name}}</span>
+        </div>
+        {{/articles}}
+    </div>
+
+    {{#articles}}
+    <div class="article">
+        <div class="page-header">
+            <span>சட்டவிளக்கு</span>
+            <span>தொகுதி {{../volume}} | இதழ் {{../issue_number}}</span>
+        </div>
+        
+        <h2 class="article-title">{{title}}</h2>
+        <div class="article-meta">
+            <span class="content-type-badge">{{content_type}}</span>
+            <span>{{author_name}}</span>
+        </div>
+
+        <div class="article-body">
+            {{{body_html}}}
+        </div>
+
+        <div class="page-footer">
+            சட்டவிளக்கு — டிஜிட்டல் பதிப்பு
+        </div>
+    </div>
+    {{/articles}}
+</body>
+</html>

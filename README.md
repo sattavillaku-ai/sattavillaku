@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# சட்டவிளக்கு (Sattavillaku) — Tamil News, Politics & Law Magazine
 
-## Getting Started
+Sattavillaku is a digital publication platform built with Next.js 14, Supabase, and Razorpay. It offers a premium reading experience for Tamil audiences focusing on legal, political, and social analysis.
 
-First, run the development server:
+## Tech Stack
+- **Frontend:** Next.js 14 (App Router), Tailwind CSS, Lucide React
+- **Backend/Database:** Supabase (PostgreSQL), Edge Middleware
+- **Payments:** Razorpay (UPI, Netbanking, Cards)
+- **Editor:** Tiptap (Rich Text Editor tailored for Tamil typography)
+- **Monitoring & CI/CD:** Sentry, Vercel Analytics, GitHub Actions
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Local Setup
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. **Clone & Install**
+   ```bash
+   git clone <repo-url>
+   cd tamil-magazine
+   npm install
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2. **Environment Variables**
+   Copy `.env.example` to `.env.local` and fill in your Supabase and Razorpay credentials.
+   ```bash
+   cp .env.example .env.local
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. **Supabase Setup**
+   Ensure you have the Supabase CLI installed.
+   ```bash
+   supabase init
+   supabase start
+   supabase db push
+   supabase db reset # Optional: To apply seed data
+   ```
 
-## Learn More
+4. **Razorpay Test Mode**
+   - Create a Razorpay account and generate Test API Keys.
+   - Configure a webhook pointing to your local environment (use `ngrok` or `localtunnel` pointing to `localhost:3000/api/webhooks/razorpay`).
+   - Use test UPI/cards provided by Razorpay to verify the checkout flow.
 
-To learn more about Next.js, take a look at the following resources:
+5. **Run the App**
+   ```bash
+   npm run dev
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Admin Access (First-Time Setup)
+Since this is a solo-editor platform, the initial admin setup requires a manual database update:
+1. Register a new user via the `/register` page.
+2. Go to your Supabase Dashboard -> Table Editor -> `users` table.
+3. Find your user ID and change the `role` from `reader` to `admin`.
+4. Log out and log back in to access the `/admin` dashboard.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment Checklist
+- [ ] Connect repository to Vercel.
+- [ ] Add all environment variables to Vercel Settings.
+- [ ] Configure Razorpay Webhook to point to your Vercel production URL.
+- [ ] Link Supabase project via the Vercel Integration.
+- [ ] Verify GitHub Actions (`ci.yml` and `deploy.yml`) have necessary repository secrets.
