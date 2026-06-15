@@ -41,7 +41,17 @@ export default function EditIssuePage({ params }: { params: { id: string } }) {
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [articles, setArticles] = useState<any[]>([]);
 
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm();
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm({
+    defaultValues: {
+      title: '',
+      slug: '',
+      volume_number: 1,
+      issue_number: 1,
+      description: '',
+      status: 'draft',
+      is_free: false,
+    }
+  });
 
   // Load Issue Data
   useEffect(() => {
@@ -61,8 +71,30 @@ export default function EditIssuePage({ params }: { params: { id: string } }) {
     fetchArticles();
   }, [params.id, reset]);
 
+  const volume = watch('volume_number');
+  const issue = watch('issue_number');
+  
+  const handleVolumeIssueChange = () => {
+    setValue('slug', `vol-${volume}-issue-${issue}`);
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Similar to new/page.tsx
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.url) setCoverImage(data.url);
+    } catch (error) {
+      alert('படம் பதிவேற்றுவதில் பிழை (Upload failed)');
+    }
   };
 
   const onSubmit = async (data: any) => {
@@ -114,11 +146,88 @@ export default function EditIssuePage({ params }: { params: { id: string } }) {
       </div>
 
       <form className="bg-card border rounded-xl p-6 shadow-sm space-y-6">
-         {/* ... (Same fields as new/page.tsx) ... */}
-         <div>
-            <label className="block text-sm font-medium mb-2 font-sans">இதழ் தலைப்பு</label>
-            <input {...register('title')} className="w-full p-3 rounded-md border bg-background font-serif text-lg" />
-         </div>
+        <div>
+          <label className="block text-sm font-medium mb-2 font-sans">இதழ் தலைப்பு (Issue Title)</label>
+          <input
+            {...register('title', { required: 'தலைப்பு தேவை' })}
+            className="w-full p-3 rounded-md border bg-background font-serif text-lg"
+            placeholder="எ.கா: சட்டவிளக்கு - சிறப்பு மலர்"
+          />
+          {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message as string}</p>}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label className="block text-sm font-medium mb-2">தொகுதி (Volume)</label>
+            <input
+              type="number"
+              {...register('volume_number', { valueAsNumber: true })}
+              onChange={handleVolumeIssueChange}
+              className="w-full p-2 rounded-md border bg-background"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">இதழ் எண் (Issue Number)</label>
+            <input
+              type="number"
+              {...register('issue_number', { valueAsNumber: true })}
+              onChange={handleVolumeIssueChange}
+              className="w-full p-2 rounded-md border bg-background"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">சுட்டி (Slug)</label>
+            <input
+              {...register('slug', { required: true })}
+              className="w-full p-2 rounded-md border bg-muted"
+              readOnly
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">சுருக்கம் (Description)</label>
+          <textarea
+            {...register('description')}
+            rows={4}
+            className="w-full p-3 rounded-md border bg-background font-serif"
+            placeholder="இந்த இதழின் சிறப்பம்சங்கள்..."
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium mb-2">அட்டைப்படம் (Cover Image)</label>
+            <div className="border-2 border-dashed rounded-lg p-4 text-center hover:bg-accent/50 transition-colors">
+              <input type="file" id="cover" className="hidden" accept="image/*" onChange={handleImageUpload} />
+              <label htmlFor="cover" className="cursor-pointer flex flex-col items-center gap-2">
+                {coverImage ? (
+                  <img src={coverImage} alt="Cover preview" className="h-40 object-cover rounded shadow" />
+                ) : (
+                  <>
+                    <Upload className="h-8 w-8 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">படத்தை பதிவேற்றவும் (Upload Image)</span>
+                  </>
+                )}
+              </label>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+             <div>
+                <label className="block text-sm font-medium mb-2">நிலை (Status)</label>
+                <select {...register('status')} className="w-full p-2 rounded-md border bg-background">
+                  <option value="draft">வரைவு (Draft)</option>
+                  <option value="published">வெளியிடப்பட்டது (Published)</option>
+                </select>
+              </div>
+              
+              <div className="flex items-center gap-3 p-4 border rounded-lg bg-muted/30">
+                <input type="checkbox" id="is_free" {...register('is_free')} className="h-5 w-5 rounded border-gray-300" />
+                <label htmlFor="is_free" className="font-medium cursor-pointer">இலவச இதழா? (Is Free Issue?)</label>
+              </div>
+          </div>
+        </div>
       </form>
 
       <div className="bg-card border rounded-xl p-6 shadow-sm">

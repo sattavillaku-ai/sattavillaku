@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { Loader2, Mail, Chrome } from 'lucide-react';
+import { Loader2, Mail } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('மின்னஞ்சல் தவறானது (Invalid email)'),
@@ -18,7 +18,6 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const supabase = createClient();
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -116,7 +115,6 @@ export default function LoginPage() {
               onClick={handleGoogleLogin}
               className="flex w-full items-center justify-center gap-3 rounded-md bg-background px-3 py-1.5 text-foreground shadow-sm ring-1 ring-inset ring-input hover:bg-accent focus-visible:ring-transparent"
             >
-              <Chrome className="h-5 w-5" />
               <span className="text-sm font-semibold leading-6">Google மூலம் உள்நுழைய</span>
             </button>
           </div>

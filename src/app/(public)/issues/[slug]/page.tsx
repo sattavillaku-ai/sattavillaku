@@ -15,10 +15,10 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
   return {
     title: `${issue.title} | சட்டவிளக்கு`,
-    description: issue.description,
+    description: issue.description || '',
     openGraph: {
       title: issue.title,
-      description: issue.description,
+      description: issue.description || '',
       images: [{ url: issue.cover_image_url || '/og-image.jpg' }],
     },
   };
@@ -26,7 +26,50 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 // Static params for ISR
 export async function generateStaticParams() {
-...
+  const supabase = createServerClient();
+  const { data: issues } = await supabase
+    .from('issues')
+    .select('slug')
+    .eq('status', 'published');
+
+  return issues?.map((issue) => ({
+    slug: issue.slug,
+  })) || [];
+}
+
+export default async function IssuePage({ params }: { params: { slug: string } }) {
+  const supabase = createServerClient();
+
+  // இதழ் விவரங்கள் (Issue details)
+  const { data: issue } = await supabase
+    .from('issues')
+    .select('*')
+    .eq('slug', params.slug)
+    .single();
+
+  if (!issue) notFound();
+
+  // இதழ் உள்ளடக்கங்கள் (Issue contents)
+  const { data: contents } = await supabase
+    .from('issue_content')
+    .select('*')
+    .eq('issue_id', issue.id)
+    .order('position', { ascending: true });
+
+  // பயனர் சந்தா சரிபார்ப்பு (User subscription check)
+  const { data: { session } } = await supabase.auth.getSession();
+  let isSubscribed = false;
+
+  if (session) {
+    const { data: sub } = await supabase
+      .from('subscriptions')
+      .select('status, current_period_end')
+      .eq('user_id', session.user.id)
+      .single();
+    
+    isSubscribed = sub?.status === 'active' && new Date(sub.current_period_end) > new Date();
+  }
+
   const canAccessFull = isSubscribed || issue.is_free;
 
   // NewsArticle Schema
@@ -35,8 +78,8 @@ export async function generateStaticParams() {
     '@type': 'NewsArticle',
     headline: issue.title,
     description: issue.description,
-    image: [issue.cover_image_url],
-    datePublished: issue.published_at,
+    image: [issue.cover_image_url || ''],
+    datePublished: issue.published_at || new Date().toISOString(),
   };
 
   return (
