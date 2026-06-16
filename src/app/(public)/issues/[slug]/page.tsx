@@ -8,7 +8,8 @@ import { ChevronDown, ArrowUp } from 'lucide-react';
 
 // SEO Metadata
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const supabase = createServerClient();
+  const { createAdminClient } = await import('@/lib/supabase/server');
+  const supabase = createAdminClient();
   const { data: issue } = await supabase.from('issues').select('*').eq('slug', params.slug).single();
 
   if (!issue) return {};
@@ -26,7 +27,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 // Static params for ISR
 export async function generateStaticParams() {
-  const supabase = createServerClient();
+  const { createAdminClient } = await import('@/lib/supabase/server');
+  const supabase = createAdminClient();
   const { data: issues } = await supabase
     .from('issues')
     .select('slug')
