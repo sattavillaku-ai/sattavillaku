@@ -1,45 +1,77 @@
 import Link from 'next/link';
-import { Scale } from 'lucide-react';
+import { Scale, Mail, Phone, MapPin, Facebook, Twitter, Youtube, Send } from 'lucide-react';
 
 export function Footer() {
   return (
-    <footer className="border-t bg-card mt-auto">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="col-span-1 md:col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <Scale className="h-6 w-6 text-primary" />
-              <span className="font-serif text-2xl font-bold tracking-tight">சட்டவிளக்கு</span>
+    <footer className="bg-primary text-primary-foreground mt-auto relative overflow-hidden">
+      {/* Background Accent */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      
+      <div className="container mx-auto px-4 py-20 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-16">
+          {/* Brand Column */}
+          <div className="col-span-1 md:col-span-2 space-y-8">
+            <Link href="/" className="flex items-center gap-3">
+              <div className="bg-secondary p-2 rounded-lg">
+                <Scale className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-serif text-3xl font-black tracking-tighter uppercase">சட்டவிளக்கு</span>
+                <span className="text-[10px] tracking-[0.4em] font-bold text-secondary uppercase">Satta Vilakku</span>
+              </div>
             </Link>
-            <p className="text-muted-foreground max-w-sm mb-4">
-              சட்டமும் சமூகமும் இணைந்த செய்தி, அரசியல் மற்றும் சட்ட விழிப்புணர்வுக்கான தமிழ் இணைய இதழ்.
+            
+            <p className="text-primary-foreground/70 max-w-sm leading-relaxed text-lg italic">
+              "சட்ட அறிவே அதிகாரம்" — சமூக விழிப்புணர்வு மற்றும் நீதிக்கான உன்னத தமிழ் இதழ்.
             </p>
-            <p className="font-bold text-primary">சந்தா: மாதம் வெறும் ₹30</p>
+
+            <div className="flex gap-4">
+              {[Facebook, Twitter, Youtube, Send].map((Icon, i) => (
+                <Link key={i} href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-secondary hover:text-primary transition-all shadow-xl">
+                  <Icon className="h-5 w-5" />
+                </Link>
+              ))}
+            </div>
           </div>
           
-          <div>
-            <h4 className="font-bold mb-4">தள இணைப்புகள்</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="/about" className="hover:text-primary transition-colors">எங்களைப் பற்றி</Link></li>
-              <li><Link href="/issues" className="hover:text-primary transition-colors">இதழ் காப்பகம்</Link></li>
-              <li><Link href="/search" className="hover:text-primary transition-colors">தேடல்</Link></li>
-              <li><Link href="/subscribe" className="hover:text-primary transition-colors">சந்தா பெறுங்கள்</Link></li>
-            </ul>
+          {/* Links Column */}
+          <div className="space-y-6">
+            <h4 className="text-secondary font-black uppercase tracking-widest text-xs">தள இணைப்புகள்</h4>
+            <nav className="flex flex-col gap-4 text-sm font-medium">
+              <Link href="/about" className="hover:text-secondary transition-colors">எங்களைப் பற்றி</Link>
+              <Link href="/issues" className="hover:text-secondary transition-colors">இதழ் காப்பகம்</Link>
+              <Link href="/events" className="hover:text-secondary transition-colors">நிகழ்வுகள்</Link>
+              <Link href="/subscribe" className="text-secondary font-bold hover:underline">இப்போதே சந்தா பெறுங்கள்</Link>
+            </nav>
           </div>
           
-          <div>
-            <h4 className="font-bold mb-4">கொள்கைகள்</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="/privacy" className="hover:text-primary transition-colors">தனியுரிமை கொள்கை</Link></li>
-              <li><Link href="/refund" className="hover:text-primary transition-colors">திரும்பப் பெறுதல் கொள்கை</Link></li>
-              <li><Link href="/contact" className="hover:text-primary transition-colors">தொடர்பு கொள்ள</Link></li>
+          {/* Contact Column */}
+          <div className="space-y-6">
+            <h4 className="text-secondary font-black uppercase tracking-widest text-xs">தொடர்புக்கு</h4>
+            <ul className="space-y-4 text-sm font-medium opacity-80">
+              <li className="flex items-center gap-3">
+                <Mail className="h-4 w-4 text-secondary" />
+                <span>contact@sattavilakku.com</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <Phone className="h-4 w-4 text-secondary" />
+                <span>+91 98765 43210</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <MapPin className="h-4 w-4 text-secondary" />
+                <span>சென்னை, தமிழ்நாடு.</span>
+              </li>
             </ul>
           </div>
         </div>
         
-        <div className="border-t mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground text-center md:text-left">
-          <p>© {new Date().getFullYear()} சட்டவிளக்கு. அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.</p>
-          <p>நேர்த்தியான தமிழ் வாசிப்பிற்காக வடிவமைக்கப்பட்டது.</p>
+        <div className="border-t border-white/10 mt-20 pt-10 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] uppercase font-black tracking-[0.2em] opacity-50">
+          <p>© {new Date().getFullYear()} SATTAVILAKKU MAGAZINE. ALL RIGHTS RESERVED.</p>
+          <div className="flex gap-8">
+            <Link href="/privacy" className="hover:text-white">Privacy</Link>
+            <Link href="/terms" className="hover:text-white">Terms</Link>
+            <Link href="/refund" className="hover:text-white">Refund</Link>
+          </div>
         </div>
       </div>
     </footer>

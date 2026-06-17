@@ -2,26 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 30 50% 98%; /* Creamy background */
+    --foreground: 222 47% 11%; /* Navy foreground */
+    
+    --primary: 222 47% 11%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 45 54% 54%; /* Gold */
+    --secondary-foreground: 222 47% 11%;
+    
+    --accent: 0 68% 32%; /* Crimson */
+    --accent-foreground: 0 0% 100%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222 47% 11%;
+    
+    --radius: 0.5rem;
   }
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: hsl(var(--foreground));
+  background-color: #faf8f3; /* Cream */
+  font-family: var(--font-noto-sans-tamil), sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-noto-serif-tamil), serif;
+  letter-spacing: -0.02em;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  .magazine-shadow {
+    box-shadow: 0 10px 30px -10px rgba(26, 39, 68, 0.3);
   }
 }
