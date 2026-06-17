@@ -5,39 +5,39 @@ export function Footer() {
   return (
     <footer className="bg-primary text-primary-foreground mt-auto relative overflow-hidden">
       {/* Background Accent */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      <div className="absolute top-0 right-0 w-48 md:w-64 h-48 md:h-64 bg-secondary/10 rounded-full blur-[60px] md:blur-3xl -translate-y-1/2 translate-x-1/2" />
       
-      <div className="container mx-auto px-4 py-20 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-16">
+      <div className="container mx-auto px-4 py-12 md:py-20 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-16">
           {/* Brand Column */}
-          <div className="col-span-1 md:col-span-2 space-y-8">
+          <div className="col-span-1 md:col-span-2 space-y-6 md:space-y-8 text-center md:text-left flex flex-col items-center md:items-start">
             <Link href="/" className="flex items-center gap-3">
               <div className="bg-secondary p-2 rounded-lg">
-                <Scale className="h-6 w-6 text-primary" />
+                <Scale className="h-5 w-5 md:h-6 md:w-6 text-primary" />
               </div>
-              <div className="flex flex-col">
-                <span className="font-serif text-3xl font-black tracking-tighter uppercase">சட்டவிளக்கு</span>
-                <span className="text-[10px] tracking-[0.4em] font-bold text-secondary uppercase">Satta Vilakku</span>
+              <div className="flex flex-col text-left">
+                <span className="font-serif text-2xl md:text-3xl font-black tracking-tighter uppercase">சட்டவிளக்கு</span>
+                <span className="text-[9px] md:text-[10px] tracking-[0.4em] font-bold text-secondary uppercase">Satta Vilakku</span>
               </div>
             </Link>
             
-            <p className="text-primary-foreground/70 max-w-sm leading-relaxed text-lg italic">
+            <p className="text-primary-foreground/70 max-w-sm leading-relaxed text-base md:text-lg italic">
               "சட்ட அறிவே அதிகாரம்" — சமூக விழிப்புணர்வு மற்றும் நீதிக்கான உன்னத தமிழ் இதழ்.
             </p>
 
-            <div className="flex gap-4">
+            <div className="flex justify-center md:justify-start gap-4">
               {[Globe, MessageCircle, Send, Share2].map((Icon, i) => (
                 <Link key={i} href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-secondary hover:text-primary transition-all shadow-xl">
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-4 w-4 md:h-5 md:w-5" />
                 </Link>
               ))}
             </div>
           </div>
           
           {/* Links Column */}
-          <div className="space-y-6">
-            <h4 className="text-secondary font-black uppercase tracking-widest text-xs">தள இணைப்புகள்</h4>
-            <nav className="flex flex-col gap-4 text-sm font-medium">
+          <div className="space-y-4 md:space-y-6 text-center md:text-left">
+            <h4 className="text-secondary font-black uppercase tracking-widest text-[10px] md:text-xs">தள இணைப்புகள்</h4>
+            <nav className="flex flex-col gap-3 md:gap-4 text-sm font-medium">
               <Link href="/about" className="hover:text-secondary transition-colors">எங்களைப் பற்றி</Link>
               <Link href="/issues" className="hover:text-secondary transition-colors">இதழ் காப்பகம்</Link>
               <Link href="/events" className="hover:text-secondary transition-colors">நிகழ்வுகள்</Link>
@@ -46,9 +46,9 @@ export function Footer() {
           </div>
           
           {/* Contact Column */}
-          <div className="space-y-6">
-            <h4 className="text-secondary font-black uppercase tracking-widest text-xs">தொடர்புக்கு</h4>
-            <ul className="space-y-4 text-sm font-medium opacity-80">
+          <div className="space-y-4 md:space-y-6 text-center md:text-left flex flex-col items-center md:items-start">
+            <h4 className="text-secondary font-black uppercase tracking-widest text-[10px] md:text-xs">தொடர்புக்கு</h4>
+            <ul className="space-y-3 md:space-y-4 text-sm font-medium opacity-80 flex flex-col items-center md:items-start">
               <li className="flex items-center gap-3">
                 <Mail className="h-4 w-4 text-secondary" />
                 <span>contact@sattavilakku.com</span>
@@ -65,9 +65,9 @@ export function Footer() {
           </div>
         </div>
         
-        <div className="border-t border-white/10 mt-20 pt-10 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] uppercase font-black tracking-[0.2em] opacity-50">
-          <p>© {new Date().getFullYear()} SATTAVILAKKU MAGAZINE. ALL RIGHTS RESERVED.</p>
-          <div className="flex gap-8">
+        <div className="border-t border-white/10 mt-12 md:mt-20 pt-8 md:pt-10 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6 text-[9px] md:text-[10px] uppercase font-black tracking-[0.2em] opacity-50 text-center md:text-left">
+          <p className="leading-relaxed">© {new Date().getFullYear()} SATTAVILAKKU MAGAZINE. ALL RIGHTS RESERVED.</p>
+          <div className="flex flex-wrap justify-center gap-4 md:gap-8">
             <Link href="/privacy" className="hover:text-white">Privacy</Link>
             <Link href="/terms" className="hover:text-white">Terms</Link>
             <Link href="/refund" className="hover:text-white">Refund</Link>
