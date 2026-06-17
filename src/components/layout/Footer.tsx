@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Scale, Mail, Phone, MapPin, Facebook, Twitter, Youtube, Send } from 'lucide-react';
+import { Scale, Mail, Phone, MapPin, Share2, MessageCircle, Globe, Send } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -26,7 +26,7 @@ export function Footer() {
             </p>
 
             <div className="flex gap-4">
-              {[Facebook, Twitter, Youtube, Send].map((Icon, i) => (
+              {[Globe, MessageCircle, Send, Share2].map((Icon, i) => (
                 <Link key={i} href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-secondary hover:text-primary transition-all shadow-xl">
                   <Icon className="h-5 w-5" />
                 </Link>

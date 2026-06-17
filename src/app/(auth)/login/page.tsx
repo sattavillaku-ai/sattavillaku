@@ -1,4 +1,3 @@
-'use brain'; // This is a client component
 'use client';
 
 import { useState } from 'react';

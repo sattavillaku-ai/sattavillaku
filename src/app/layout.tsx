@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Noto_Serif_Tamil, Noto_Sans_Tamil } from 'next/font/google';
-import { ThemeProvider } from 'next-themes';
+import { ThemeProvider } from '@/components/ThemeProvider';
 import './globals.css';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
