@@ -25,7 +25,7 @@ export function IssueCard({ issue, isLoading }: IssueCardProps) {
   }
 
   return (
-    <div className="group relative flex flex-col h-full bg-white rounded-[2rem] overflow-hidden border border-slate-100 hover:border-secondary/50 hover:shadow-2xl transition-all duration-500 magazine-shadow active:scale-[0.98]">
+    <div className="group relative flex flex-col h-full bg-white rounded-[2rem] overflow-hidden border border-slate-100 hover:border-primary/50 hover:shadow-2xl transition-all duration-500 magazine-shadow active:scale-[0.98]">
       <Link href={`/issues/${issue.slug}`} className="relative aspect-[3/4] overflow-hidden block">
         <Image
           src={issue.cover_image_url || '/placeholder-cover.jpg'}
@@ -39,11 +39,11 @@ export function IssueCard({ issue, isLoading }: IssueCardProps) {
         <div className="absolute top-6 left-6 flex flex-col gap-3">
           {issue.is_premium ? (
             <div className="bg-primary text-white text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-xl shadow-2xl flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-secondary rounded-full animate-pulse" />
+              <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
               PREMIUM
             </div>
           ) : (
-            <div className="bg-secondary text-primary text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-xl shadow-2xl">
+            <div className="bg-secondary text-white text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-xl shadow-2xl">
               FREE ARCHIVE
             </div>
           )}
@@ -51,14 +51,14 @@ export function IssueCard({ issue, isLoading }: IssueCardProps) {
 
         {/* Quick Action Button */}
         <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500">
-          <div className="w-14 h-14 bg-secondary text-primary rounded-2xl flex items-center justify-center shadow-2xl rotate-12 group-hover:rotate-0 transition-transform">
+          <div className="w-14 h-14 bg-primary text-white rounded-2xl flex items-center justify-center shadow-2xl rotate-12 group-hover:rotate-0 transition-transform">
             <ArrowUpRight size={28} />
           </div>
         </div>
       </Link>
       
       <div className="p-8 flex flex-col flex-grow">
-        <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-secondary mb-4 bg-primary/5 w-fit px-3 py-1.5 rounded-lg">
+        <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-4 bg-primary/5 w-fit px-3 py-1.5 rounded-lg">
           <Calendar size={12} />
           <span>{new Date(issue.published_at!).toLocaleDateString('ta-IN', { month: 'long', year: 'numeric' })}</span>
         </div>
@@ -76,16 +76,16 @@ export function IssueCard({ issue, isLoading }: IssueCardProps) {
         <div className="border-t border-slate-50 pt-6 flex items-center justify-between">
           <div className="flex -space-x-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-cream flex items-center justify-center text-[10px] font-bold text-primary">
+              <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-50 flex items-center justify-center text-[10px] font-bold text-foreground">
                 {i}
               </div>
             ))}
-            <div className="w-8 h-8 rounded-full border-2 border-white bg-secondary flex items-center justify-center text-[8px] font-black text-primary">
+            <div className="w-8 h-8 rounded-full border-2 border-white bg-primary flex items-center justify-center text-[8px] font-black text-white">
               +5
             </div>
           </div>
           
-          <Link href={`/issues/${issue.slug}`} className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary hover:text-secondary transition-colors">
+          <Link href={`/issues/${issue.slug}`} className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-foreground hover:text-primary transition-colors">
             வாசிக்க
             <BookOpen size={16} />
           </Link>

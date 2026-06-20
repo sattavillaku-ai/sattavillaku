@@ -87,7 +87,7 @@ export default function SubscribePage() {
           email: user.email,
         },
         theme: {
-          color: '#000000',
+          color: '#DC2626',
         },
       };
 

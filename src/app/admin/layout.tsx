@@ -1,6 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { BookOpen, PlusCircle, Users, IndianRupee, LayoutDashboard } from 'lucide-react';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -34,11 +35,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {/* பக்கவாட்டு பட்டி (Sidebar) */}
       <aside className="w-64 border-r bg-card flex flex-col hidden md:flex">
         <div className="p-6 border-b">
-          <div className="flex items-center gap-2 font-serif font-bold text-xl text-primary">
-            <LayoutDashboard className="h-6 w-6" />
-            <span>ஆசிரியர் பலகை</span>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">சட்டவிளக்கு (Sattavillaku)</p>
+          <Link href="/admin/issues" className="block">
+            <Image
+              src="/images/sattavillaku-logo.jpeg"
+              alt="சட்டவிளக்கு"
+              width={160}
+              height={40}
+              className="h-9 w-auto object-contain"
+            />
+          </Link>
+          <p className="text-xs text-muted-foreground mt-2">ஆசிரியர் பலகை (Editor Dashboard)</p>
         </div>
         
         <nav className="flex-1 p-4 space-y-2">

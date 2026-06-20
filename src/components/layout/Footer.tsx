@@ -1,33 +1,34 @@
 import Link from 'next/link';
-import { Scale, Mail, Phone, MapPin, Share2, MessageCircle, Globe, Send } from 'lucide-react';
+import Image from 'next/image';
+import { Mail, Phone, MapPin, Share2, MessageCircle, Globe, Send } from 'lucide-react';
 
 export function Footer() {
   return (
-    <footer className="bg-primary text-primary-foreground mt-auto relative overflow-hidden">
+    <footer className="bg-secondary text-white mt-auto relative overflow-hidden">
       {/* Background Accent */}
-      <div className="absolute top-0 right-0 w-48 md:w-64 h-48 md:h-64 bg-secondary/10 rounded-full blur-[60px] md:blur-3xl -translate-y-1/2 translate-x-1/2" />
+      <div className="absolute top-0 right-0 w-48 md:w-64 h-48 md:h-64 bg-primary/10 rounded-full blur-[60px] md:blur-3xl -translate-y-1/2 translate-x-1/2" />
       
       <div className="container mx-auto px-4 py-12 md:py-20 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-16">
           {/* Brand Column */}
           <div className="col-span-1 md:col-span-2 space-y-6 md:space-y-8 text-center md:text-left flex flex-col items-center md:items-start">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="bg-secondary p-2 rounded-lg">
-                <Scale className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-              </div>
-              <div className="flex flex-col text-left">
-                <span className="font-serif text-2xl md:text-3xl font-black tracking-tighter uppercase">சட்டவிளக்கு</span>
-                <span className="text-[9px] md:text-[10px] tracking-[0.4em] font-bold text-secondary uppercase">Satta Vilakku</span>
-              </div>
+            <Link href="/" className="inline-block">
+              <Image
+                src="/images/sattavillaku-logo.jpeg"
+                alt="சட்டவிளக்கு - Satta Vilakku"
+                width={200}
+                height={50}
+                className="h-12 w-auto object-contain brightness-110"
+              />
             </Link>
             
-            <p className="text-primary-foreground/70 max-w-sm leading-relaxed text-base md:text-lg italic">
+            <p className="text-white/70 max-w-sm leading-relaxed text-base md:text-lg italic">
               "சட்ட அறிவே அதிகாரம்" — சமூக விழிப்புணர்வு மற்றும் நீதிக்கான உன்னத தமிழ் இதழ்.
             </p>
 
             <div className="flex justify-center md:justify-start gap-4">
               {[Globe, MessageCircle, Send, Share2].map((Icon, i) => (
-                <Link key={i} href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-secondary hover:text-primary transition-all shadow-xl">
+                <Link key={i} href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-xl">
                   <Icon className="h-4 w-4 md:h-5 md:w-5" />
                 </Link>
               ))}
@@ -36,29 +37,28 @@ export function Footer() {
           
           {/* Links Column */}
           <div className="space-y-4 md:space-y-6 text-center md:text-left">
-            <h4 className="text-secondary font-black uppercase tracking-widest text-[10px] md:text-xs">தள இணைப்புகள்</h4>
+            <h4 className="text-white/60 font-black uppercase tracking-widest text-[10px] md:text-xs">தள இணைப்புகள்</h4>
             <nav className="flex flex-col gap-3 md:gap-4 text-sm font-medium">
-              <Link href="/about" className="hover:text-secondary transition-colors">எங்களைப் பற்றி</Link>
-              <Link href="/issues" className="hover:text-secondary transition-colors">இதழ் காப்பகம்</Link>
-              <Link href="/events" className="hover:text-secondary transition-colors">நிகழ்வுகள்</Link>
-              <Link href="/subscribe" className="text-secondary font-bold hover:underline">இப்போதே சந்தா பெறுங்கள்</Link>
+              <Link href="/about" className="hover:text-primary transition-colors">எங்களைப் பற்றி</Link>
+              <Link href="/issues" className="hover:text-primary transition-colors">இதழ் காப்பகம்</Link>
+              <Link href="/subscribe" className="text-primary font-bold hover:underline">இப்போதே சந்தா பெறுங்கள்</Link>
             </nav>
           </div>
           
           {/* Contact Column */}
           <div className="space-y-4 md:space-y-6 text-center md:text-left flex flex-col items-center md:items-start">
-            <h4 className="text-secondary font-black uppercase tracking-widest text-[10px] md:text-xs">தொடர்புக்கு</h4>
+            <h4 className="text-white/60 font-black uppercase tracking-widest text-[10px] md:text-xs">தொடர்புக்கு</h4>
             <ul className="space-y-3 md:space-y-4 text-sm font-medium opacity-80 flex flex-col items-center md:items-start">
               <li className="flex items-center gap-3">
-                <Mail className="h-4 w-4 text-secondary" />
+                <Mail className="h-4 w-4 text-primary" />
                 <span>contact@sattavilakku.com</span>
               </li>
               <li className="flex items-center gap-3">
-                <Phone className="h-4 w-4 text-secondary" />
+                <Phone className="h-4 w-4 text-primary" />
                 <span>+91 98765 43210</span>
               </li>
               <li className="flex items-center gap-3">
-                <MapPin className="h-4 w-4 text-secondary" />
+                <MapPin className="h-4 w-4 text-primary" />
                 <span>சென்னை, தமிழ்நாடு.</span>
               </li>
             </ul>

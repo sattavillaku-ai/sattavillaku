@@ -12,18 +12,19 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
         primary: {
-          DEFAULT: "#1a2744", // Navy
+          DEFAULT: "#DC2626", // Brand Red
           foreground: "#ffffff",
         },
         secondary: {
-          DEFAULT: "#c9a84c", // Gold
-          foreground: "#1a2744",
-        },
-        accent: {
-          DEFAULT: "#8b1a1a", // Crimson
+          DEFAULT: "#1a1a1a", // Rich Black
           foreground: "#ffffff",
         },
-        cream: "#faf8f3",
+        accent: {
+          DEFAULT: "#B91C1C", // Darker Red for hover states
+          foreground: "#ffffff",
+        },
+        cream: "#fafafa",
+        navy: "#1a2744",
       },
       fontFamily: {
         serif: ["var(--font-noto-serif-tamil)", "serif"],
