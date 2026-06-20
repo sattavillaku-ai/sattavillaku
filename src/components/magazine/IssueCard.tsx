@@ -13,19 +13,19 @@ interface IssueCardProps {
 export function IssueCard({ issue, isLoading }: IssueCardProps) {
   if (isLoading) {
     return (
-      <div className="flex flex-col h-full bg-white rounded-[2rem] overflow-hidden border border-slate-100 animate-pulse">
-        <div className="aspect-[3/4] bg-slate-100" />
+      <div className="flex flex-col h-full bg-card rounded-[2rem] overflow-hidden border border-border animate-pulse">
+        <div className="aspect-[3/4] bg-muted" />
         <div className="p-8 space-y-4">
-          <div className="h-4 bg-slate-100 rounded-full w-1/4" />
-          <div className="h-8 bg-slate-100 rounded-full w-3/4" />
-          <div className="h-20 bg-slate-100 rounded-2xl w-full" />
+          <div className="h-4 bg-muted rounded-full w-1/4" />
+          <div className="h-8 bg-muted rounded-full w-3/4" />
+          <div className="h-20 bg-muted rounded-2xl w-full" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="group relative flex flex-col h-full bg-white rounded-[2rem] overflow-hidden border border-slate-100 hover:border-primary/50 hover:shadow-2xl transition-all duration-500 magazine-shadow active:scale-[0.98]">
+    <div className="group relative flex flex-col h-full bg-card rounded-[2rem] overflow-hidden border border-border hover:border-primary/50 hover:shadow-2xl transition-all duration-500 magazine-shadow active:scale-[0.98]">
       <Link href={`/issues/${issue.slug}`} className="relative aspect-[3/4] overflow-hidden block">
         <Image
           src={issue.cover_image_url || '/placeholder-cover.jpg'}
@@ -69,18 +69,18 @@ export function IssueCard({ issue, isLoading }: IssueCardProps) {
           </h3>
         </Link>
         
-        <p className="text-slate-500 font-medium text-sm line-clamp-3 mb-8 flex-grow leading-relaxed">
+        <p className="text-muted-foreground font-medium text-sm line-clamp-3 mb-8 flex-grow leading-relaxed">
           {issue.description}
         </p>
         
-        <div className="border-t border-slate-50 pt-6 flex items-center justify-between">
+        <div className="border-t border-border pt-6 flex items-center justify-between">
           <div className="flex -space-x-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-50 flex items-center justify-center text-[10px] font-bold text-foreground">
+              <div key={i} className="w-8 h-8 rounded-full border-2 border-card bg-muted flex items-center justify-center text-[10px] font-bold text-foreground">
                 {i}
               </div>
             ))}
-            <div className="w-8 h-8 rounded-full border-2 border-white bg-primary flex items-center justify-center text-[8px] font-black text-white">
+            <div className="w-8 h-8 rounded-full border-2 border-card bg-primary flex items-center justify-center text-[8px] font-black text-white">
               +5
             </div>
           </div>

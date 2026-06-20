@@ -27,22 +27,30 @@ export function Header() {
       className={cn(
         "sticky top-0 z-50 w-full transition-all duration-300",
         isScrolled 
-          ? "border-b bg-background/95 backdrop-blur-md shadow-sm py-2" 
-          : "bg-background py-4"
+          ? "border-b bg-background/95 backdrop-blur-md shadow-md py-2 border-border/80" 
+          : "bg-background py-4 md:py-6"
       )}
     >
       {/* Top Border Accent — Red gradient matching the brand */}
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-red-500 to-primary" />
 
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+      <div className={cn(
+        "container mx-auto flex items-center justify-between px-4 transition-all duration-300",
+        isScrolled ? "h-14" : "h-16 md:h-24"
+      )}>
         {/* லோகோ (Logo) — Brand image */}
         <Link href="/" className="flex items-center group">
           <Image
             src="/images/sattavillaku-logo.jpeg"
             alt="சட்டவிளக்கு - Satta Vilakku"
-            width={220}
-            height={55}
-            className="h-10 md:h-12 w-auto object-contain transition-transform group-hover:scale-105"
+            width={450}
+            height={97}
+            className={cn(
+              "w-auto object-contain transition-all duration-300 group-hover:scale-105",
+              isScrolled 
+                ? "h-9 md:h-11" 
+                : "h-12 sm:h-14 md:h-20"
+            )}
             priority
           />
         </Link>
@@ -85,11 +93,11 @@ export function Header() {
       {/* மொபைல் டிராயர் (Mobile Drawer) */}
       <div 
         className={cn(
-          "fixed inset-0 top-[73px] z-40 bg-background md:hidden transition-all duration-500 ease-in-out px-6",
+          "fixed inset-0 top-full z-40 bg-background md:hidden transition-all duration-500 ease-in-out px-6",
           isMobileMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4 pointer-events-none"
         )}
       >
-        <div className="bg-white/95 rounded-[2.5rem] mt-4 p-8 border border-border/50 shadow-xl">
+        <div className="bg-card/95 backdrop-blur-md rounded-[2.5rem] mt-4 p-8 border border-border/50 shadow-xl">
           <nav className="flex flex-col gap-8 text-2xl font-black font-serif text-foreground">
             <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between border-b pb-4">
               <span>முகப்பு</span>

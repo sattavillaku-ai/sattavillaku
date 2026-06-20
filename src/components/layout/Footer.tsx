@@ -16,9 +16,9 @@ export function Footer() {
               <Image
                 src="/images/sattavillaku-logo.jpeg"
                 alt="சட்டவிளக்கு - Satta Vilakku"
-                width={200}
-                height={50}
-                className="h-12 w-auto object-contain brightness-110"
+                width={240}
+                height={60}
+                className="h-14 md:h-16 w-auto object-contain brightness-110"
               />
             </Link>
             

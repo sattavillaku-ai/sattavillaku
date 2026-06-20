@@ -131,7 +131,7 @@ export default async function HomePage() {
       </section>
 
       {/* 3. தனித்துவம் (Unique Features) */}
-      <section className="bg-gray-50 py-16 md:py-24 border-y border-slate-100 relative overflow-hidden">
+      <section className="bg-muted/50 py-16 md:py-24 border-y border-border relative overflow-hidden">
          <div className="container mx-auto px-4 md:px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10 md:gap-16">
             {[
               { icon: ShieldCheck, title: 'உறுதிப்படுத்தப்பட்ட செய்தி', desc: 'ஒவ்வொரு செய்தியும் சட்ட வல்லுநர்களால் சரிபார்க்கப்பட்ட பின்னரே வெளியிடப்படுகிறது.' },
@@ -139,11 +139,11 @@ export default async function HomePage() {
               { icon: Globe, title: 'எங்கும் எப்போதும்', desc: 'மொபைல், டேப்லெட் அல்லது கணினி என எதில் வேண்டுமானாலும் தடையின்றி வாசியுங்கள்.' }
             ].map((feature, i) => (
               <div key={i} className="space-y-4 md:space-y-6 group text-center md:text-left flex flex-col items-center md:items-start">
-                <div className="w-14 h-14 md:w-16 md:h-16 bg-white rounded-2xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-xl shadow-primary/5">
+                <div className="w-14 h-14 md:w-16 md:h-16 bg-card rounded-2xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-xl shadow-primary/5">
                   <feature.icon size={28} className="md:w-8 md:h-8" />
                 </div>
                 <h4 className="text-xl md:text-2xl font-black text-foreground">{feature.title}</h4>
-                <p className="text-sm md:text-base text-slate-500 font-medium leading-relaxed max-w-sm">{feature.desc}</p>
+                <p className="text-sm md:text-base text-muted-foreground font-medium leading-relaxed max-w-sm">{feature.desc}</p>
               </div>
             ))}
          </div>

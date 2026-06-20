@@ -11,6 +11,9 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        border: "var(--border)",
+        input: "var(--input)",
+        ring: "var(--ring)",
         primary: {
           DEFAULT: "#DC2626", // Brand Red
           foreground: "#ffffff",
@@ -22,6 +25,14 @@ const config: Config = {
         accent: {
           DEFAULT: "#B91C1C", // Darker Red for hover states
           foreground: "#ffffff",
+        },
+        muted: {
+          DEFAULT: "var(--muted)",
+          foreground: "var(--muted-foreground)",
+        },
+        card: {
+          DEFAULT: "var(--card)",
+          foreground: "var(--card-foreground)",
         },
         cream: "#fafafa",
         navy: "#1a2744",
