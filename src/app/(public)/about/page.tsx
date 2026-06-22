@@ -11,7 +11,7 @@ export default function AboutPage() {
 
       <div className="prose prose-lg dark:prose-invert max-w-none space-y-8 font-serif">
         <p className="leading-relaxed">
-          <strong>சட்டவிளக்கு</strong> (Sattavillaku) என்பது தமிழ்ச் சூழலில் சட்டம், அரசியல் மற்றும் சமூக நீதி குறித்த ஆழமான புரிதலை ஏற்படுத்தும் நோக்கில் தொடங்கப்பட்ட ஒரு இணைய இதழ். சாமானிய மக்களும் சட்டத்தின் நுணுக்கங்களை எளிதாகப் புரிந்து கொள்ள வேண்டும் என்பதே எங்களின் முதன்மை நோக்கம்.
+          <strong>சட்டவிளக்கு</strong> (Sattavilakku) என்பது தமிழ்ச் சூழலில் சட்டம், அரசியல் மற்றும் சமூக நீதி குறித்த ஆழமான புரிதலை ஏற்படுத்தும் நோக்கில் தொடங்கப்பட்ட ஒரு இணைய இதழ். சாமானிய மக்களும் சட்டத்தின் நுணுக்கங்களை எளிதாகப் புரிந்து கொள்ள வேண்டும் என்பதே எங்களின் முதன்மை நோக்கம்.
         </p>
 
         <h2 className="text-2xl font-bold font-serif border-b pb-2">எங்களின் பணிகள்</h2>
@@ -38,7 +38,7 @@ export default function AboutPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">மின்னஞ்சல்</p>
-                <p className="font-bold font-sans">contact@sattavillaku.com</p>
+                <p className="font-bold font-sans">sattavilakku@gmail.com</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -47,7 +47,7 @@ export default function AboutPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">தொலைபேசி</p>
-                <p className="font-bold font-sans">+91 98765 43210</p>
+                <p className="font-bold font-sans">+91 79042 67437</p>
               </div>
             </div>
           </div>
