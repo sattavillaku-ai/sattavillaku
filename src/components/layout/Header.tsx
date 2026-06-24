@@ -22,6 +22,17 @@ export function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
+
   return (
     <header 
       className={cn(
@@ -35,7 +46,7 @@ export function Header() {
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-red-500 to-primary" />
 
       <div className={cn(
-        "container mx-auto flex items-center justify-between px-4 transition-all duration-300",
+        "container mx-auto flex items-center justify-between px-4 transition-all duration-300 relative z-50",
         isScrolled ? "h-14" : "h-16 md:h-24"
       )}>
         {/* லோகோ (Logo) — Brand image */}
@@ -93,11 +104,11 @@ export function Header() {
       {/* மொபைல் டிராயர் (Mobile Drawer) */}
       <div 
         className={cn(
-          "fixed inset-0 top-full z-40 bg-background md:hidden transition-all duration-500 ease-in-out px-6",
-          isMobileMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4 pointer-events-none"
+          "fixed inset-0 z-40 bg-background md:hidden transition-all duration-500 ease-in-out px-6",
+          isMobileMenuOpen ? "top-0 pt-20 md:pt-28 opacity-100 translate-y-0" : "top-full opacity-0 -translate-y-4 pointer-events-none"
         )}
       >
-        <div className="bg-card/95 backdrop-blur-md rounded-[2.5rem] mt-4 p-8 border border-border/50 shadow-xl">
+        <div className="bg-card rounded-[2.5rem] mt-4 p-8 border border-border/50 shadow-xl">
           <nav className="flex flex-col gap-8 text-2xl font-black font-serif text-foreground">
             <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between border-b pb-4">
               <span>முகப்பு</span>
