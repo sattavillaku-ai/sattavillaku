@@ -7,6 +7,9 @@ export async function POST(req: Request) {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+    const { searchParams } = new URL(req.url);
+    const bucket = searchParams.get('bucket') || 'magazine-assets';
+
     const formData = await req.formData();
     const file = formData.get('file') as File;
     if (!file) return NextResponse.json({ error: 'கோப்பு இல்லை' }, { status: 400 });
@@ -16,13 +19,13 @@ export async function POST(req: Request) {
     const filePath = `uploads/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
-      .from('magazine-assets')
+      .from(bucket)
       .upload(filePath, file);
 
     if (uploadError) throw uploadError;
 
     const { data: { publicUrl } } = supabase.storage
-      .from('magazine-assets')
+      .from(bucket)
       .getPublicUrl(filePath);
 
     return NextResponse.json({ url: publicUrl, path: filePath });

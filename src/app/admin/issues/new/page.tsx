@@ -3,13 +3,16 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { Loader2, Upload, ArrowLeft } from 'lucide-react';
+import { Loader2, Upload, ArrowLeft, FileText } from 'lucide-react';
 import Link from 'next/link';
 
 export default function NewIssuePage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [pdfPath, setPdfPath] = useState<string | null>(null);
+  const [pdfName, setPdfName] = useState<string | null>(null);
+  const [isPdfUploading, setIsPdfUploading] = useState(false);
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
     defaultValues: {
@@ -50,10 +53,38 @@ export default function NewIssuePage() {
     }
   };
 
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsPdfUploading(true);
+    setPdfName(file.name);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/admin/upload?bucket=premium-pdfs', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.path) {
+        setPdfPath(data.path);
+      } else {
+        alert(data.error || 'PDF பதிவேற்றுவதில் பிழை (Upload failed)');
+      }
+    } catch (error) {
+      alert('PDF பதிவேற்றுவதில் பிழை (Upload failed)');
+    } finally {
+      setIsPdfUploading(false);
+    }
+  };
+
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      const payload = { ...data, cover_image_url: coverImage };
+      const payload = { ...data, cover_image_url: coverImage, pdf_url: pdfPath };
       const res = await fetch('/api/admin/issues', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -166,6 +197,33 @@ export default function NewIssuePage() {
                   <input type="checkbox" id="is_free" {...register('is_free')} className="h-5 w-5 rounded border-gray-300" />
                   <label htmlFor="is_free" className="font-medium cursor-pointer">இலவச இதழா? (Is Free Issue?)</label>
                 </div>
+          </div>
+          </div>
+
+          {/* PDF இதழ் கோப்பு பதிவேற்றம் (PDF Magazine Upload) */}
+          <div className="border-t pt-6">
+            <label className="block text-sm font-medium mb-2 font-sans">இதழ் PDF கோப்பு (Magazine PDF File)</label>
+            <div className="border-2 border-dashed rounded-lg p-6 text-center hover:bg-accent/50 transition-colors">
+              <input type="file" id="pdf-file" className="hidden" accept="application/pdf" onChange={handlePdfUpload} />
+              <label htmlFor="pdf-file" className="cursor-pointer flex flex-col items-center gap-2">
+                {isPdfUploading ? (
+                  <>
+                    <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                    <span className="text-sm text-muted-foreground">பதிவேற்றப்படுகிறது... (Uploading...)</span>
+                  </>
+                ) : pdfPath ? (
+                  <>
+                    <FileText className="h-8 w-8 text-green-600" />
+                    <span className="text-sm text-green-600 font-bold">PDF பதிவேற்றப்பட்டது: {pdfName || pdfPath}</span>
+                    <span className="text-xs text-muted-foreground">(மாற்ற கிளிக் செய்யவும்)</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-8 w-8 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">இதழ் PDF கோப்பை பதிவேற்றவும் (Upload PDF File)</span>
+                  </>
+                )}
+              </label>
             </div>
           </div>
         </div>
