@@ -93,11 +93,11 @@ export async function middleware(req: NextRequest) {
     const { data: user } = await supabase
       .from('users')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', session.id)
       .single();
       
     if (user?.role !== 'admin') {
-      console.warn(`[Security] Unauthorized admin access attempt by user: ${session.user.id}`);
+      console.warn(`[Security] Unauthorized admin access attempt by user: ${session.id}`);
       url.pathname = '/';
       return NextResponse.redirect(url);
     }

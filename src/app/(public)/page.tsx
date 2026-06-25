@@ -149,7 +149,60 @@ export default async function HomePage() {
          </div>
       </section>
 
-      {/* 4. சந்தா அழைப்பு (Subscription CTA) */}
+      {/* 4. நிறுவனர் & ஆசிரியர் (Founder & Editor Branding) */}
+      <section className="container mx-auto px-4 md:px-6">
+        <div className="bg-card border border-border/80 rounded-[2rem] md:rounded-[3.5rem] p-8 md:p-16 relative overflow-hidden shadow-xl">
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-red-500 to-primary" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-16 items-center">
+            {/* Image container */}
+            <div className="lg:col-span-4 relative flex justify-center">
+              <div className="relative w-[280px] h-[340px] md:w-[320px] md:h-[400px] rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden border-[6px] md:border-[10px] border-secondary/5 shadow-2xl group">
+                <Image
+                  src="/images/photo.jpeg"
+                  alt="விஜய் சஞ்சய் — உரிமையாளர் & ஆசிரியர்"
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <div className="absolute bottom-6 left-6 right-6 text-white lg:hidden">
+                  <h4 className="text-xl font-bold font-serif">விஜய் சஞ்சய்</h4>
+                  <p className="text-xs text-primary font-black uppercase tracking-wider">உரிமையாளர் & ஆசிரியர்</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content container */}
+            <div className="lg:col-span-8 space-y-6 md:space-y-8">
+              <div className="space-y-2">
+                <span className="text-xs md:text-sm font-black uppercase tracking-[0.3em] md:tracking-[0.4em] text-primary">நிறுவனர் & ஆசிரியர்</span>
+                <h3 className="text-3xl sm:text-4xl md:text-5xl font-serif font-black text-foreground tracking-tighter hidden lg:block">
+                  விஜய் சஞ்சய்
+                </h3>
+                <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest hidden lg:block">
+                  உரிமையாளர் மற்றும் முதன்மை ஆசிரியர்
+                </p>
+              </div>
+
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-serif leading-relaxed italic border-l-2 md:border-l-4 border-primary pl-4 md:pl-6">
+                &quot;சட்டத்தின் வெளிச்சம் ஒவ்வொரு சாமானியனுக்கும் சென்றடைய வேண்டும் என்பதே எங்களின் நோக்கம். சட்டம் என்பது வெறும் புத்தகங்களில் இருக்கும் வார்த்தைகள் அல்ல, அது நமது உரிமைகளின் கவசம். சட்டவிளக்கு இதழ் மூலம் நீதியையும் சமூக விழிப்புணர்வையும் தொடர்ந்து பரப்புவோம்.&quot;
+              </p>
+
+              <div className="flex flex-wrap gap-4 pt-2">
+                <div className="flex items-center gap-3 bg-secondary/5 border border-border px-4 py-2.5 rounded-2xl">
+                  <Scale className="h-5 w-5 text-primary" />
+                  <span className="text-xs md:text-sm font-bold text-foreground">சமூக விழிப்புணர்வு</span>
+                </div>
+                <div className="flex items-center gap-3 bg-secondary/5 border border-border px-4 py-2.5 rounded-2xl">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  <span className="text-xs md:text-sm font-bold text-foreground">சட்ட வழிகாட்டி</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. சந்தா அழைப்பு (Subscription CTA) */}
       <section className="container mx-auto px-4 md:px-6">
         <div className="bg-secondary rounded-[2rem] md:rounded-[3.5rem] p-8 md:p-24 text-center text-white relative overflow-hidden shadow-2xl">
           {/* Decor */}

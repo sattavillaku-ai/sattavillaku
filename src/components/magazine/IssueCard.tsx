@@ -37,7 +37,7 @@ export function IssueCard({ issue, isLoading }: IssueCardProps) {
         
         {/* Overlay Badges */}
         <div className="absolute top-6 left-6 flex flex-col gap-3">
-          {issue.is_premium ? (
+          {!issue.is_free ? (
             <div className="bg-primary text-white text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-xl shadow-2xl flex items-center gap-2">
               <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
               PREMIUM

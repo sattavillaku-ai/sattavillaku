@@ -35,7 +35,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     html = html.replace('{{cover_image_url}}', issue.cover_image_url || '');
     html = html.replace('{{volume}}', issue.volume_number.toString());
     html = html.replace('{{issue_number}}', issue.issue_number.toString());
-    html = html.replace('{{published_month}}', new Date(issue.published_at).toLocaleDateString('ta-IN', { month: 'long', year: 'numeric' }));
+    html = html.replace('{{published_month}}', new Date(issue.published_at || new Date().toISOString()).toLocaleDateString('ta-IN', { month: 'long', year: 'numeric' }));
 
     // கட்டுரைகளைச் சேர்க்கவும்
     const articlesHtml = articles.map(art => {
@@ -74,13 +74,13 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
     const browser = await puppeteer.launch({
       args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
+      defaultViewport: (chromium as any).defaultViewport,
       executablePath,
-      headless: chromium.headless,
+      headless: (chromium as any).headless,
     });
 
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.setContent(html, { waitUntil: 'networkidle0' as any });
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,

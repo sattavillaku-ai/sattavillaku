@@ -23,7 +23,7 @@ export function Footer() {
             </Link>
             
             <p className="text-white/70 max-w-sm leading-relaxed text-base md:text-lg italic">
-              "சட்ட அறிவே அதிகாரம்" — சமூக விழிப்புணர்வு மற்றும் நீதிக்கான உன்னத தமிழ் இதழ்.
+              &quot;சட்ட அறிவே அதிகாரம்&quot; — சமூக விழிப்புணர்வு மற்றும் நீதிக்கான உன்னத தமிழ் இதழ்.
             </p>
 
             <div className="flex justify-center md:justify-start gap-4">

@@ -1,4 +1,4 @@
-import { createServerClient as createServerClientSSR, createClient } from '@supabase/ssr';
+import { createServerClient as createServerClientSSR } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import type { Database } from '@/types/database.types';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
