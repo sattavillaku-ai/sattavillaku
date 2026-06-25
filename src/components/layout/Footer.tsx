@@ -1,8 +1,24 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { Mail, Phone, MapPin, Share2, MessageCircle, Globe, Send } from 'lucide-react';
 
 export function Footer() {
+  const handleShare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      navigator.share({
+        title: 'சட்டவிளக்கு (Sattavilakku)',
+        text: 'சமூக விழிப்புணர்வு மற்றும் நீதிக்கான உன்னத தமிழ் இதழ்.',
+        url: typeof window !== 'undefined' ? window.location.origin : 'https://sattavilakku.in',
+      }).catch(console.error);
+    } else if (typeof navigator !== 'undefined') {
+      navigator.clipboard.writeText(typeof window !== 'undefined' ? window.location.origin : 'https://sattavilakku.in');
+      alert('இணைப்பு நகலெடுக்கப்பட்டது! (Link copied to clipboard)');
+    }
+  };
+
   return (
     <footer className="bg-secondary text-white mt-auto relative overflow-hidden">
       {/* Background Accent */}
@@ -27,11 +43,38 @@ export function Footer() {
             </p>
 
             <div className="flex justify-center md:justify-start gap-4">
-              {[Globe, MessageCircle, Send, Share2].map((Icon, i) => (
-                <Link key={i} href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-xl">
-                  <Icon className="h-4 w-4 md:h-5 md:w-5" />
-                </Link>
-              ))}
+              <Link 
+                href="/" 
+                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-xl"
+                aria-label="Home"
+              >
+                <Globe className="h-4 w-4 md:h-5 md:w-5" />
+              </Link>
+              <Link 
+                href="https://wa.me/917904267437?text=வணக்கம்,%20சட்டவிளக்கு%20இதழ்%20பற்றி%20மேலும்%20அறிய%20விரும்புகிறேன்." 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-xl"
+                aria-label="WhatsApp"
+              >
+                <MessageCircle className="h-4 w-4 md:h-5 md:w-5" />
+              </Link>
+              <Link 
+                href="https://t.me/share/url?url=https://sattavilakku.in&text=சமூக%20விழிப்புணர்வு%20மற்றும்%20நீதிக்கான%20உன்னத%20தமிழ்%20இதழ்%20-%20சட்டவிளக்கு" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-xl"
+                aria-label="Forward via Telegram"
+              >
+                <Send className="h-4 w-4 md:h-5 md:w-5" />
+              </Link>
+              <button 
+                onClick={handleShare}
+                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-xl cursor-pointer"
+                aria-label="Share Website"
+              >
+                <Share2 className="h-4 w-4 md:h-5 md:w-5" />
+              </button>
             </div>
           </div>
           

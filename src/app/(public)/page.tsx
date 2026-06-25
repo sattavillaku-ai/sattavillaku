@@ -157,11 +157,10 @@ export default async function HomePage() {
             {/* Image container */}
             <div className="lg:col-span-4 relative flex justify-center">
               <div className="relative w-[280px] h-[340px] md:w-[320px] md:h-[400px] rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden border-[6px] md:border-[10px] border-secondary/5 shadow-2xl group">
-                <Image
+                <img
                   src="/images/photo.jpeg"
                   alt="விஜய் சஞ்சய் — உரிமையாளர் & ஆசிரியர்"
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                 <div className="absolute bottom-6 left-6 right-6 text-white lg:hidden">
