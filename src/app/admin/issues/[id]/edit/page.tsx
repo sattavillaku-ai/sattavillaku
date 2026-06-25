@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { Loader2, Upload, ArrowLeft, GripVertical, Trash2, Edit2, PlusCircle } from 'lucide-react';
@@ -35,7 +35,8 @@ function SortableArticle({ article, onEdit, onDelete }: any) {
   );
 }
 
-export default function EditIssuePage({ params }: { params: { id: string } }) {
+export default function EditIssuePage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [coverImage, setCoverImage] = useState<string | null>(null);
@@ -56,7 +57,7 @@ export default function EditIssuePage({ params }: { params: { id: string } }) {
   // Load Issue Data
   useEffect(() => {
     const fetchIssue = async () => {
-      const res = await fetch(`/api/admin/issues/${params.id}`);
+      const res = await fetch(`/api/admin/issues/${resolvedParams.id}`);
       if (res.ok) {
         const data = await res.json();
         reset(data);
@@ -64,12 +65,12 @@ export default function EditIssuePage({ params }: { params: { id: string } }) {
       }
     };
     const fetchArticles = async () => {
-      const res = await fetch(`/api/admin/issues/${params.id}/content`);
+      const res = await fetch(`/api/admin/issues/${resolvedParams.id}/content`);
       if (res.ok) setArticles(await res.json());
     };
     fetchIssue();
     fetchArticles();
-  }, [params.id, reset]);
+  }, [resolvedParams.id, reset]);
 
   const volume = watch('volume_number');
   const issue = watch('issue_number');
@@ -101,7 +102,7 @@ export default function EditIssuePage({ params }: { params: { id: string } }) {
     setIsSubmitting(true);
     try {
       const payload = { ...data, cover_image_url: coverImage };
-      const res = await fetch(`/api/admin/issues/${params.id}`, {
+      const res = await fetch(`/api/admin/issues/${resolvedParams.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

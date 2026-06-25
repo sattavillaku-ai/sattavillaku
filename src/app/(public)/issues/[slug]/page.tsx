@@ -7,10 +7,11 @@ import { Metadata } from 'next';
 import { ChevronDown, ArrowUp } from 'lucide-react';
 
 // SEO Metadata
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const resolvedParams = await params;
   const { createAdminClient } = await import('@/lib/supabase/server');
   const supabase = createAdminClient();
-  const { data: issue } = await supabase.from('issues').select('*').eq('slug', params.slug).single();
+  const { data: issue } = await supabase.from('issues').select('*').eq('slug', resolvedParams.slug).single();
 
   if (!issue) return {};
 
@@ -39,14 +40,15 @@ export async function generateStaticParams() {
   })) || [];
 }
 
-export default async function IssuePage({ params }: { params: { slug: string } }) {
+export default async function IssuePage({ params }: { params: Promise<{ slug: string }> }) {
+  const resolvedParams = await params;
   const supabase = createServerClient();
 
   // இதழ் விவரங்கள் (Issue details)
   const { data: issue } = await supabase
     .from('issues')
     .select('*')
-    .eq('slug', params.slug)
+    .eq('slug', resolvedParams.slug)
     .single();
 
   if (!issue) notFound();

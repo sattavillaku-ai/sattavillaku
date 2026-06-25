@@ -12,10 +12,11 @@ export const metadata: Metadata = {
 export default async function ArchivePage({ 
   searchParams 
 }: { 
-  searchParams: { category?: string, year?: string, page?: string } 
+  searchParams: Promise<{ category?: string, year?: string, page?: string }> 
 }) {
+  const resolvedSearchParams = await searchParams;
   const supabase = createServerClient();
-  const page = parseInt(searchParams.page || '1');
+  const page = parseInt(resolvedSearchParams.page || '1');
   const limit = 12;
   const from = (page - 1) * limit;
   const to = from + limit - 1;
@@ -27,9 +28,9 @@ export default async function ArchivePage({
     .order('published_at', { ascending: false });
 
   // ஆண்டு வாரியாக வடிகட்டுதல் (Year filter)
-  if (searchParams.year) {
-    const startOfYear = `${searchParams.year}-01-01T00:00:00Z`;
-    const endOfYear = `${searchParams.year}-12-31T23:59:59Z`;
+  if (resolvedSearchParams.year) {
+    const startOfYear = `${resolvedSearchParams.year}-01-01T00:00:00Z`;
+    const endOfYear = `${resolvedSearchParams.year}-12-31T23:59:59Z`;
     query = query.gte('published_at', startOfYear).lte('published_at', endOfYear);
   }
 
@@ -49,7 +50,7 @@ export default async function ArchivePage({
         <div className="flex gap-4">
           <select 
             className="p-2 rounded-md border bg-background text-sm"
-            defaultValue={searchParams.year || ""}
+            defaultValue={resolvedSearchParams.year || ""}
             // In a real app, use a client component for navigation
           >
             <option value="">அனைத்து ஆண்டுகளும்</option>
