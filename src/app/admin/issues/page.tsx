@@ -1,7 +1,8 @@
 import { createServerClient } from '@/lib/supabase/server';
 import Link from 'next/link';
-import { Edit, FileText, Trash2, PlusCircle, CheckCircle2, Clock, Archive } from 'lucide-react';
+import { Edit, Trash2, PlusCircle, CheckCircle2, Clock, Archive } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { GeneratePdfButton } from '@/components/magazine/GeneratePdfButton';
 
 export default async function AdminIssuesPage() {
   const supabase = createServerClient();
@@ -94,9 +95,7 @@ export default async function AdminIssuesPage() {
                     <Link href={`/admin/issues/${issue.id}/edit`} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="திருத்து (Edit)">
                       <Edit className="h-4 w-4" />
                     </Link>
-                    <button className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg" title="PDF உருவாக்கு (Generate PDF)">
-                      <FileText className="h-4 w-4" />
-                    </button>
+                    <GeneratePdfButton issueId={issue.id} />
                     <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg" title="நீக்கு (Delete)">
                       <Trash2 className="h-4 w-4" />
                     </button>
