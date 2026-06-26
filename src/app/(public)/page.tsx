@@ -60,8 +60,8 @@ export default async function HomePage() {
                 <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-primary">நிறுவனர் & ஆசிரியர் உரை</span>
               </div>
 
-              <h1 className="text-lg sm:text-3xl md:text-5xl lg:text-7xl xl:text-8xl font-serif font-black text-white leading-[1.1] tracking-tighter whitespace-nowrap">
-                K. இளையராஜா, <span className="text-sm sm:text-xl md:text-2xl lg:text-3xl font-sans font-semibold text-white/80">M.Sc., LL.B.</span>
+              <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-serif font-black text-white leading-[1.1] tracking-tighter whitespace-nowrap">
+                K. இளையராஜா, <span className="text-[13px] sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-sans font-semibold text-white/80">M.Sc., LL.B.</span>
               </h1>
               <p className="text-sm font-bold text-white/60 uppercase tracking-widest">
                 சட்டவிளக்கு இதழ் உரிமையாளர் & முதன்மை ஆசிரியர்
