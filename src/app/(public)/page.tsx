@@ -43,7 +43,7 @@ export default async function HomePage() {
               </div>
 
               <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-serif font-black text-white leading-[1.1] tracking-tighter">
-                விஜய் சஞ்சய்
+                இளையராஜா
               </h1>
               <p className="text-sm font-bold text-white/60 uppercase tracking-widest">
                 சட்டவிளக்கு இதழ் உரிமையாளர் & முதன்மை ஆசிரியர்
@@ -90,7 +90,7 @@ export default async function HomePage() {
                 <div className="relative h-full w-full rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden border-[6px] md:border-[12px] border-white/5 shadow-2xl shadow-black/50 transition-transform duration-700 group-hover:rotate-2 group-hover:scale-105">
                   <img
                     src="/images/photo.jpeg"
-                    alt="விஜய் சஞ்சய் — உரிமையாளர் & ஆசிரியர்"
+                    alt="இளையராஜா — உரிமையாளர் & ஆசிரியர்"
                     className="object-cover w-full h-full"
                   />
                   {/* Gloss Overlay */}

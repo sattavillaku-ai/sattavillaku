@@ -8,11 +8,13 @@ export default function AboutPage() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email || !message) return;
     setStatus('loading');
+    setErrorMessage('');
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
@@ -25,9 +27,12 @@ export default function AboutPage() {
         setEmail('');
         setMessage('');
       } else {
+        const data = await res.json();
+        setErrorMessage(data.error || 'செய்தி அனுப்புவதில் பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.');
         setStatus('error');
       }
-    } catch {
+    } catch (err: any) {
+      setErrorMessage(err.message || 'செய்தி அனுப்புவதில் பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.');
       setStatus('error');
     }
   };
@@ -113,7 +118,10 @@ export default function AboutPage() {
               <p className="text-green-600 text-sm font-bold">செய்தி வெற்றிகரமாக அனுப்பப்பட்டது! (Message sent successfully!)</p>
             )}
             {status === 'error' && (
-              <p className="text-red-600 text-sm font-bold">செய்தி அனுப்புவதில் பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும். (Error sending message. Please try again.)</p>
+              <div className="text-red-600 text-sm font-bold space-y-1">
+                <p>செய்தி அனுப்புவதில் பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும். (Error sending message. Please try again.)</p>
+                {errorMessage && <p className="text-xs font-semibold opacity-90 bg-red-50 dark:bg-red-950/30 p-2 rounded border border-red-200 dark:border-red-900/50 mt-1">விவரம் (Detail): {errorMessage}</p>}
+              </div>
             )}
 
             <button 
