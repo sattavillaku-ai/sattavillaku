@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req: Request) {
   try {
     const { name, email, message } = await req.json();
@@ -10,6 +8,14 @@ export async function POST(req: Request) {
     if (!name || !email || !message) {
       return NextResponse.json({ error: 'அனைத்து விவரங்களையும் நிரப்பவும் (All fields are required)' }, { status: 400 });
     }
+
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.error('RESEND_API_KEY is not defined.');
+      return NextResponse.json({ error: 'மின்னஞ்சல் சேவை தற்போது கிடைக்கவில்லை (Email service is currently unavailable)' }, { status: 500 });
+    }
+
+    const resend = new Resend(apiKey);
 
     const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
     const toEmail = process.env.CONTACT_RECEIVER_EMAIL || 'sattavillaku@gmail.com';
