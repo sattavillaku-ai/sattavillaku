@@ -1,6 +1,37 @@
+'use client';
+
+import { useState } from 'react';
 import { Scale, Mail, Phone, MapPin } from 'lucide-react';
 
 export default function AboutPage() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !email || !message) return;
+    setStatus('loading');
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, message }),
+      });
+      if (res.ok) {
+        setStatus('success');
+        setName('');
+        setEmail('');
+        setMessage('');
+      } else {
+        setStatus('error');
+      }
+    } catch {
+      setStatus('error');
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-16 max-w-4xl">
       <section className="text-center mb-16">
@@ -52,24 +83,45 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <form className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <input 
               type="text" 
               placeholder="உங்கள் பெயர்" 
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
               className="w-full p-3 rounded-lg border bg-background"
             />
             <input 
               type="email" 
               placeholder="உங்கள் மின்னஞ்சல்" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
               className="w-full p-3 rounded-lg border bg-background"
             />
             <textarea 
               placeholder="உங்கள் செய்தி" 
               rows={4} 
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              required
               className="w-full p-3 rounded-lg border bg-background"
             ></textarea>
-            <button className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-bold hover:bg-primary/90 transition-all">
-              அனுப்புக
+
+            {status === 'success' && (
+              <p className="text-green-600 text-sm font-bold">செய்தி வெற்றிகரமாக அனுப்பப்பட்டது! (Message sent successfully!)</p>
+            )}
+            {status === 'error' && (
+              <p className="text-red-600 text-sm font-bold">செய்தி அனுப்புவதில் பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும். (Error sending message. Please try again.)</p>
+            )}
+
+            <button 
+              type="submit"
+              disabled={status === 'loading'}
+              className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-bold hover:bg-primary/90 transition-all disabled:opacity-50"
+            >
+              {status === 'loading' ? 'அனுப்பப்படுகிறது...' : 'அனுப்புக'}
             </button>
           </form>
         </div>

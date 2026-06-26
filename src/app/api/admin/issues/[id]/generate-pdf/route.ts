@@ -6,15 +6,16 @@ import fs from 'fs';
 import path from 'path';
 
 // PDF உருவாக்க உதவும் செயல்பாடு (PDF Generation helper)
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const resolvedParams = await params;
     const supabase = createServerClient();
     
     // 1. இதழ் மற்றும் கட்டுரை விவரங்களைப் பெறவும்
     const { data: issue, error: issueError } = await supabase
       .from('issues')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single();
 
     if (issueError || !issue) return NextResponse.json({ error: 'இதழ் கிடைக்கவில்லை' }, { status: 404 });

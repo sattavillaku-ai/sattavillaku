@@ -27,86 +27,135 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col gap-16 md:gap-24 pb-20 md:pb-32 overflow-hidden">
-      {/* 1. பிரீமியம் ஹீரோ பகுதி (Premium Hero Section) */}
-      {latestIssue && (
-        <section className="relative w-full min-h-[100svh] md:min-h-[85vh] flex items-center pt-16 md:pt-20 bg-secondary">
-          {/* Background Elements */}
-          <div className="absolute top-0 right-0 w-full md:w-1/2 h-full bg-gradient-to-b md:bg-gradient-to-l from-primary/10 to-transparent pointer-events-none" />
-          <div className="absolute -bottom-24 -left-24 w-64 md:w-96 h-64 md:h-96 bg-primary/20 rounded-full blur-[80px] md:blur-[120px] pointer-events-none" />
-          
-          <div className="container mx-auto px-4 md:px-6 relative z-10 py-10 md:py-0">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-16 items-center">
-              {/* Text Content */}
-              <div className="lg:col-span-7 space-y-6 md:space-y-10">
-                <div className="inline-flex items-center gap-2 md:gap-3 bg-white/5 border border-white/10 px-3 md:px-4 py-1.5 md:py-2 rounded-full backdrop-blur-xl">
-                  <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-primary rounded-full animate-pulse" />
-                  <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-primary">இந்த மாத இதழ் வெளியீடு</span>
-                </div>
+      {/* 1. பிரதான ஹீரோ பகுதி (Main Owner & Magazine Hero Section) */}
+      <section className="relative w-full min-h-[90svh] md:min-h-[80vh] flex items-center pt-24 md:pt-28 bg-secondary overflow-hidden">
+        {/* Background Elements */}
+        <div className="absolute top-0 right-0 w-full md:w-1/2 h-full bg-gradient-to-b md:bg-gradient-to-l from-primary/10 to-transparent pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-64 md:w-96 h-64 md:h-96 bg-primary/20 rounded-full blur-[80px] md:blur-[120px] pointer-events-none" />
+        
+        <div className="container mx-auto px-4 md:px-6 relative z-10 py-10 md:py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-16 items-center">
+            {/* Text Content */}
+            <div className="lg:col-span-7 space-y-6 md:space-y-8">
+              <div className="inline-flex items-center gap-2 md:gap-3 bg-white/5 border border-white/10 px-3 md:px-4 py-1.5 md:py-2 rounded-full backdrop-blur-xl">
+                <Scale className="h-4 w-4 text-primary animate-pulse" />
+                <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-primary">நிறுவனர் & ஆசிரியர் உரை</span>
+              </div>
 
-                <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-serif font-black text-white leading-[1.1] tracking-tighter">
-                  {latestIssue.title}
-                </h1>
+              <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-serif font-black text-white leading-[1.1] tracking-tighter">
+                விஜய் சஞ்சய்
+              </h1>
+              <p className="text-sm font-bold text-white/60 uppercase tracking-widest">
+                சட்டவிளக்கு இதழ் உரிமையாளர் & முதன்மை ஆசிரியர்
+              </p>
 
-                <p className="text-base sm:text-lg md:text-2xl text-white/60 font-medium max-w-2xl leading-relaxed italic border-l-2 md:border-l-4 border-primary pl-4 md:pl-6">
-                  {latestIssue.description}
-                </p>
+              <p className="text-base sm:text-lg md:text-2xl text-white/80 font-serif leading-relaxed italic border-l-2 md:border-l-4 border-primary pl-4 md:pl-6">
+                &quot;சட்டத்தின் வெளிச்சம் ஒவ்வொரு சாமானியனுக்கும் சென்றடைய வேண்டும் என்பதே எங்களின் நோக்கம். சட்டம் என்பது வெறும் புத்தகங்களில் இருக்கும் வார்த்தைகள் அல்ல, அது நமது உரிமைகளின் கவசம். சட்டவிளக்கு இதழ் மூலம் நீதியையும் சமூக விழிப்புணர்வையும் தொடர்ந்து பரப்புவோம்.&quot;
+              </p>
 
-                <div className="flex flex-col sm:flex-row gap-4 md:gap-6 pt-2 md:pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 md:gap-6 pt-2 md:pt-4">
+                {latestIssue ? (
                   <Link
                     href={`/issues/${latestIssue.slug}`}
                     className="group flex items-center justify-center sm:justify-start gap-3 md:gap-4 bg-primary text-white px-6 md:px-10 py-4 md:py-5 rounded-[1rem] md:rounded-[1.5rem] font-black text-base md:text-lg transition-all hover:shadow-[0_20px_50px_-10px_rgba(220,38,38,0.4)] hover:scale-105 active:scale-95"
                   >
-                    இப்போதே படிக்க
+                    புதிய இதழ் வாசிக்க
                     <ArrowRight className="group-hover:translate-x-2 transition-transform" />
                   </Link>
+                ) : (
                   <Link
-                    href="/subscribe"
-                    className="flex items-center justify-center sm:justify-start gap-3 bg-white/5 border border-white/20 text-white px-6 md:px-10 py-4 md:py-5 rounded-[1rem] md:rounded-[1.5rem] font-black text-base md:text-lg hover:bg-white/10 transition-all backdrop-blur-sm"
+                    href="/issues"
+                    className="group flex items-center justify-center sm:justify-start gap-3 md:gap-4 bg-primary text-white px-6 md:px-10 py-4 md:py-5 rounded-[1rem] md:rounded-[1.5rem] font-black text-base md:text-lg transition-all hover:shadow-[0_20px_50px_-10px_rgba(220,38,38,0.4)] hover:scale-105 active:scale-95"
                   >
-                    <Crown className="text-primary" />
-                    சந்தா பெற
+                    இதழ்களைக் காண்க
+                    <ArrowRight className="group-hover:translate-x-2 transition-transform" />
                   </Link>
-                </div>
+                )}
+                <Link
+                  href="/subscribe"
+                  className="flex items-center justify-center sm:justify-start gap-3 bg-white/5 border border-white/20 text-white px-6 md:px-10 py-4 md:py-5 rounded-[1rem] md:rounded-[1.5rem] font-black text-base md:text-lg hover:bg-white/10 transition-all backdrop-blur-sm"
+                >
+                  <Crown className="text-primary" />
+                  சந்தா பெற
+                </Link>
+              </div>
+            </div>
+
+            {/* Visual Content (Owner's Photo) */}
+            <div className="lg:col-span-5 relative mt-8 lg:mt-0 flex justify-center">
+              <div className="relative aspect-[3/4.2] w-full max-w-[280px] sm:max-w-[320px] md:max-w-[380px] group">
+                {/* Shadow Decor */}
+                <div className="absolute inset-4 bg-primary/20 rounded-[2rem] md:rounded-[3rem] blur-[40px] md:blur-[60px] -z-10 group-hover:bg-primary/40 transition-all duration-700" />
                 
-                <div className="flex flex-wrap items-center gap-6 md:gap-10 pt-8 md:pt-12 border-t border-white/5">
-                   <div className="flex flex-col">
-                      <span className="text-2xl md:text-3xl font-black text-white">12k+</span>
-                      <span className="text-[9px] md:text-[10px] uppercase font-bold text-white/40 tracking-widest">வாசகர்கள்</span>
-                   </div>
-                   <div className="flex flex-col">
-                      <span className="text-2xl md:text-3xl font-black text-white">500+</span>
-                      <span className="text-[9px] md:text-[10px] uppercase font-bold text-white/40 tracking-widest">கட்டுரைகள்</span>
-                   </div>
-                   <div className="flex flex-col">
-                      <span className="text-2xl md:text-3xl font-black text-white">100%</span>
-                      <span className="text-[9px] md:text-[10px] uppercase font-bold text-white/40 tracking-widest">உண்மைத் தகவல்</span>
-                   </div>
+                <div className="relative h-full w-full rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden border-[6px] md:border-[12px] border-white/5 shadow-2xl shadow-black/50 transition-transform duration-700 group-hover:rotate-2 group-hover:scale-105">
+                  <img
+                    src="/images/photo.jpeg"
+                    alt="விஜய் சஞ்சய் — உரிமையாளர் & ஆசிரியர்"
+                    className="object-cover w-full h-full"
+                  />
+                  {/* Gloss Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-              {/* Visual Content (Book Preview) - Shown on all screens now but optimized */}
-              <div className="lg:col-span-5 relative mt-8 lg:mt-0">
-                 <div className="relative aspect-[3/4.2] w-full max-w-[280px] sm:max-w-[350px] md:max-w-[450px] mx-auto group">
-                    {/* Shadow Decor */}
-                    <div className="absolute inset-4 bg-primary/20 rounded-[2rem] md:rounded-[3rem] blur-[40px] md:blur-[60px] -z-10 group-hover:bg-primary/40 transition-all duration-700" />
-                    
-                    <div className="relative h-full w-full rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden border-[6px] md:border-[12px] border-white/5 shadow-2xl shadow-black/50 transition-transform duration-700 group-hover:rotate-2 group-hover:scale-105">
-                       <Image
-                        src={latestIssue.cover_image_url || '/placeholder-cover.jpg'}
-                        alt={latestIssue.title}
-                        fill
-                        priority
-                        className="object-cover"
-                      />
-                      {/* Gloss Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent pointer-events-none" />
-                    </div>
-                 </div>
+      {/* 2. இந்த மாத இதழ் வெளியீடு (Latest Issue Spotlight Section) */}
+      {latestIssue && (
+        <section className="container mx-auto px-4 md:px-6 py-16 md:py-24 border-b border-border">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-16 items-center">
+            {/* Left - Latest Issue Cover Image */}
+            <div className="lg:col-span-5 relative order-last lg:order-first">
+              <div className="relative aspect-[3/4.2] w-full max-w-[280px] sm:max-w-[350px] md:max-w-[400px] mx-auto group">
+                <div className="absolute inset-4 bg-primary/10 rounded-[2rem] md:rounded-[3rem] blur-[30px] md:blur-[50px] -z-10 group-hover:bg-primary/20 transition-all duration-700" />
+                
+                <div className="relative h-full w-full rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden border-4 md:border-[8px] border-muted shadow-xl transition-transform duration-700 group-hover:scale-105">
+                  <Image
+                    src={latestIssue.cover_image_url || '/placeholder-cover.jpg'}
+                    alt={latestIssue.title}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Right - Latest Issue Text & Buttons */}
+            <div className="lg:col-span-7 space-y-6 md:space-y-8">
+              <div className="space-y-2 text-center lg:text-left">
+                <span className="text-xs md:text-sm font-black uppercase tracking-[0.3em] md:tracking-[0.4em] text-primary">புதிய வெளியீடு (Latest Issue)</span>
+                <h2 className="text-3xl sm:text-4xl md:text-6xl font-serif font-black text-foreground tracking-tighter">
+                  {latestIssue.title}
+                </h2>
+              </div>
+
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-serif leading-relaxed italic border-l-2 md:border-l-4 border-primary pl-4 md:pl-6">
+                {latestIssue.description}
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center lg:justify-start">
+                <Link
+                  href={`/issues/${latestIssue.slug}`}
+                  className="group flex items-center justify-center gap-3 bg-primary text-white px-6 md:px-10 py-3.5 md:py-4.5 rounded-xl font-black text-base md:text-lg transition-all hover:shadow-[0_15px_40px_-10px_rgba(220,38,38,0.4)] hover:scale-105 active:scale-95"
+                >
+                  வாசிக்கத் தொடங்குங்கள்
+                  <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
+                </Link>
+                <Link
+                  href="/subscribe"
+                  className="flex items-center justify-center gap-3 bg-muted border border-border text-foreground px-6 md:px-10 py-3.5 md:py-4.5 rounded-xl font-black text-base md:text-lg hover:bg-accent transition-all"
+                >
+                  <Crown size={18} className="text-primary" />
+                  சந்தா செலுத்தவும்
+                </Link>
               </div>
             </div>
           </div>
         </section>
       )}
+
 
       {/* 2. சமீபத்திய இதழ்கள் (Recent Issues Grid) */}
       <section className="container mx-auto px-4 md:px-6">
@@ -149,57 +198,7 @@ export default async function HomePage() {
          </div>
       </section>
 
-      {/* 4. நிறுவனர் & ஆசிரியர் (Founder & Editor Branding) */}
-      <section className="container mx-auto px-4 md:px-6">
-        <div className="bg-card border border-border/80 rounded-[2rem] md:rounded-[3.5rem] p-8 md:p-16 relative overflow-hidden shadow-xl">
-          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-red-500 to-primary" />
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-16 items-center">
-            {/* Image container */}
-            <div className="lg:col-span-4 relative flex justify-center">
-              <div className="relative w-[280px] h-[340px] md:w-[320px] md:h-[400px] rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden border-[6px] md:border-[10px] border-secondary/5 shadow-2xl group">
-                <img
-                  src="/images/photo.jpeg"
-                  alt="விஜய் சஞ்சய் — உரிமையாளர் & ஆசிரியர்"
-                  className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                <div className="absolute bottom-6 left-6 right-6 text-white lg:hidden">
-                  <h4 className="text-xl font-bold font-serif">விஜய் சஞ்சய்</h4>
-                  <p className="text-xs text-primary font-black uppercase tracking-wider">உரிமையாளர் & ஆசிரியர்</p>
-                </div>
-              </div>
-            </div>
 
-            {/* Content container */}
-            <div className="lg:col-span-8 space-y-6 md:space-y-8">
-              <div className="space-y-2">
-                <span className="text-xs md:text-sm font-black uppercase tracking-[0.3em] md:tracking-[0.4em] text-primary">நிறுவனர் & ஆசிரியர்</span>
-                <h3 className="text-3xl sm:text-4xl md:text-5xl font-serif font-black text-foreground tracking-tighter hidden lg:block">
-                  விஜய் சஞ்சய்
-                </h3>
-                <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest hidden lg:block">
-                  உரிமையாளர் மற்றும் முதன்மை ஆசிரியர்
-                </p>
-              </div>
-
-              <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-serif leading-relaxed italic border-l-2 md:border-l-4 border-primary pl-4 md:pl-6">
-                &quot;சட்டத்தின் வெளிச்சம் ஒவ்வொரு சாமானியனுக்கும் சென்றடைய வேண்டும் என்பதே எங்களின் நோக்கம். சட்டம் என்பது வெறும் புத்தகங்களில் இருக்கும் வார்த்தைகள் அல்ல, அது நமது உரிமைகளின் கவசம். சட்டவிளக்கு இதழ் மூலம் நீதியையும் சமூக விழிப்புணர்வையும் தொடர்ந்து பரப்புவோம்.&quot;
-              </p>
-
-              <div className="flex flex-wrap gap-4 pt-2">
-                <div className="flex items-center gap-3 bg-secondary/5 border border-border px-4 py-2.5 rounded-2xl">
-                  <Scale className="h-5 w-5 text-primary" />
-                  <span className="text-xs md:text-sm font-bold text-foreground">சமூக விழிப்புணர்வு</span>
-                </div>
-                <div className="flex items-center gap-3 bg-secondary/5 border border-border px-4 py-2.5 rounded-2xl">
-                  <BookOpen className="h-5 w-5 text-primary" />
-                  <span className="text-xs md:text-sm font-bold text-foreground">சட்ட வழிகாட்டி</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* 5. சந்தா அழைப்பு (Subscription CTA) */}
       <section className="container mx-auto px-4 md:px-6">

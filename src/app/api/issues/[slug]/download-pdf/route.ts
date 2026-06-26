@@ -1,8 +1,9 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient, createAdminClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
-export async function GET(req: Request, { params }: { params: { slug: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ slug: string }> }) {
   try {
+    const resolvedParams = await params;
     const supabase = createServerClient();
     const { data: { session } } = await supabase.auth.getSession();
 
@@ -27,15 +28,16 @@ export async function GET(req: Request, { params }: { params: { slug: string } }
     const { data: issue, error: issueError } = await supabase
       .from('issues')
       .select('id, pdf_url')
-      .eq('slug', params.slug)
+      .eq('slug', resolvedParams.slug)
       .single();
 
     if (issueError || !issue?.pdf_url) {
       return NextResponse.json({ error: 'PDF இன்னும் தயாரில்லை', message: 'இந்த இதழுக்கான PDF இன்னும் உருவாக்கப்படவில்லை.' }, { status: 404 });
     }
 
-    // 3. சைய்ன் செய்யப்பட்ட URL உருவாக்கவும் (Signed URL)
-    const { data: signedData, error: signError } = await supabase.storage
+    // 3. சைய்ன் செய்யப்பட்ட URL உருவாக்கவும் (Signed URL) using Admin Client
+    const adminSupabase = createAdminClient();
+    const { data: signedData, error: signError } = await adminSupabase.storage
       .from('premium-pdfs')
       .createSignedUrl(issue.pdf_url, 7200); // 2 மணிநேரம்
 
@@ -53,3 +55,4 @@ export async function GET(req: Request, { params }: { params: { slug: string } }
     return NextResponse.json({ error: 'பதிவிறக்குவதில் பிழை ஏற்பட்டது' }, { status: 500 });
   }
 }
+
