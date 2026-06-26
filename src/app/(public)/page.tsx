@@ -35,6 +35,24 @@ export default async function HomePage() {
         
         <div className="container mx-auto px-4 md:px-6 relative z-10 py-10 md:py-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-16 items-center">
+            {/* Visual Content (Owner's Photo) */}
+            <div className="lg:col-span-5 relative flex justify-center">
+              <div className="relative aspect-[3/4.2] w-full max-w-[280px] sm:max-w-[320px] md:max-w-[380px] group">
+                {/* Shadow Decor */}
+                <div className="absolute inset-4 bg-primary/20 rounded-[2rem] md:rounded-[3rem] blur-[40px] md:blur-[60px] -z-10 group-hover:bg-primary/40 transition-all duration-700" />
+                
+                <div className="relative h-full w-full rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden border-[6px] md:border-[12px] border-white/5 shadow-2xl shadow-black/50 transition-transform duration-700 group-hover:rotate-2 group-hover:scale-105">
+                  <img
+                    src="/images/photo.jpeg"
+                    alt="K. இளையராஜா, M.Sc., LL.B. — உரிமையாளர் & ஆசிரியர்"
+                    className="object-cover w-full h-full"
+                  />
+                  {/* Gloss Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
             {/* Text Content */}
             <div className="lg:col-span-7 space-y-6 md:space-y-8">
               <div className="inline-flex items-center gap-2 md:gap-3 bg-white/5 border border-white/10 px-3 md:px-4 py-1.5 md:py-2 rounded-full backdrop-blur-xl">
@@ -43,7 +61,7 @@ export default async function HomePage() {
               </div>
 
               <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-serif font-black text-white leading-[1.1] tracking-tighter">
-                இளையராஜா
+                K. இளையராஜா <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-sans font-semibold text-white/80 whitespace-nowrap">M.Sc., LL.B.</span>
               </h1>
               <p className="text-sm font-bold text-white/60 uppercase tracking-widest">
                 சட்டவிளக்கு இதழ் உரிமையாளர் & முதன்மை ஆசிரியர்
@@ -78,24 +96,6 @@ export default async function HomePage() {
                   <Crown className="text-primary" />
                   சந்தா பெற
                 </Link>
-              </div>
-            </div>
-
-            {/* Visual Content (Owner's Photo) */}
-            <div className="lg:col-span-5 relative mt-8 lg:mt-0 flex justify-center">
-              <div className="relative aspect-[3/4.2] w-full max-w-[280px] sm:max-w-[320px] md:max-w-[380px] group">
-                {/* Shadow Decor */}
-                <div className="absolute inset-4 bg-primary/20 rounded-[2rem] md:rounded-[3rem] blur-[40px] md:blur-[60px] -z-10 group-hover:bg-primary/40 transition-all duration-700" />
-                
-                <div className="relative h-full w-full rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden border-[6px] md:border-[12px] border-white/5 shadow-2xl shadow-black/50 transition-transform duration-700 group-hover:rotate-2 group-hover:scale-105">
-                  <img
-                    src="/images/photo.jpeg"
-                    alt="இளையராஜா — உரிமையாளர் & ஆசிரியர்"
-                    className="object-cover w-full h-full"
-                  />
-                  {/* Gloss Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
-                </div>
               </div>
             </div>
           </div>
