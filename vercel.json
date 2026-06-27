@@ -22,8 +22,7 @@
       "maxDuration": 30
     },
     "src/app/api/admin/issues/[id]/generate-pdf/route.ts": {
-      "maxDuration": 60,
-      "memory": 1024
+      "maxDuration": 60
     }
   }
 }
