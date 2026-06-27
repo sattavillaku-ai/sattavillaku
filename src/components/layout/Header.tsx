@@ -3,15 +3,18 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
-import { Menu, Search, User, Sun, Moon, X, BookOpen, Crown } from 'lucide-react';
+import { Menu, Search, User, Sun, Moon, X, BookOpen, Crown, ShieldAlert } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/client';
 
 export function Header() {
+  const supabase = createClient();
   const { theme, setTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -19,7 +22,42 @@ export function Header() {
       setIsScrolled(window.scrollY > 0);
     };
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    
+    // Check initial user role
+    const checkUserRole = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        setIsAdmin(userData?.role === 'admin');
+      } else {
+        setIsAdmin(false);
+      }
+    };
+
+    checkUserRole();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        setIsAdmin(userData?.role === 'admin');
+      } else {
+        setIsAdmin(false);
+      }
+    });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -71,6 +109,12 @@ export function Header() {
           <Link href="/" className="hover:text-primary transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-0.5 after:bg-primary hover:after:w-full after:transition-all">முகப்பு</Link>
           <Link href="/issues" className="hover:text-primary transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-0.5 after:bg-primary hover:after:w-full after:transition-all">இதழ்கள்</Link>
           <Link href="/about" className="hover:text-primary transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-0.5 after:bg-primary hover:after:w-full after:transition-all">எங்களைப் பற்றி</Link>
+          {isAdmin && (
+            <Link href="/admin/issues" className="text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5">
+              <ShieldAlert className="h-4 w-4" />
+              நிர்வாகம் (Admin)
+            </Link>
+          )}
           <Link href="/search" className="hover:text-primary transition-colors flex items-center gap-2">
             <Search className="h-4 w-4" />
             தேடல்
@@ -122,6 +166,12 @@ export function Header() {
               <span>எங்களைப் பற்றி</span>
               <BookOpen className="h-6 w-6 opacity-20" />
             </Link>
+            {isAdmin && (
+              <Link href="/admin/issues" onClick={() => setIsMobileMenuOpen(false)} className="text-primary flex items-center justify-between border-b pb-4">
+                <span>நிர்வாகம் (Admin Dashboard)</span>
+                <ShieldAlert className="h-6 w-6" />
+              </Link>
+            )}
             <Link href="/subscribe" onClick={() => setIsMobileMenuOpen(false)} className="text-primary flex items-center gap-3">
               <Crown className="h-7 w-7" />
               <span>சந்தா பெறு</span>
