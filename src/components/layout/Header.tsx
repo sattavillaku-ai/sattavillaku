@@ -7,8 +7,12 @@ import { Menu, Search, User, Sun, Moon, X, BookOpen, Crown, ShieldAlert } from '
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
+import { usePathname } from 'next/navigation';
 
 export function Header() {
+  const pathname = usePathname();
+  const isAdminPath = pathname.startsWith('/admin');
+
   const supabase = createClient();
   const { theme, setTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -17,6 +21,7 @@ export function Header() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    if (isAdminPath) return;
     setMounted(true);
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 0);
@@ -58,7 +63,9 @@ export function Header() {
       window.removeEventListener('scroll', handleScroll);
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isAdminPath]);
+
+  if (isAdminPath) return null;
 
   useEffect(() => {
     if (isMobileMenuOpen) {

@@ -3,8 +3,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Mail, Phone, MapPin, Share2, MessageCircle, Globe, Send } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 export function Footer() {
+  const pathname = usePathname();
+  if (pathname.startsWith('/admin')) return null;
+
   const handleShare = (e: React.MouseEvent) => {
     e.preventDefault();
     if (typeof navigator !== 'undefined' && navigator.share) {
