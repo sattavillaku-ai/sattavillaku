@@ -41,7 +41,7 @@ export async function middleware(req: NextRequest) {
   const session = user;
 
   const url = req.nextUrl.clone();
-  const ip = req.ip || req.headers.get('x-forwarded-for') || '127.0.0.1';
+  const ip = (req as any).ip || req.headers.get('x-forwarded-for') || '127.0.0.1';
 
   // 1. Rate Limiting (60 req/min for /api/*)
   if (url.pathname.startsWith('/api/')) {
@@ -85,6 +85,12 @@ export async function middleware(req: NextRequest) {
   const isAdminRoute = url.pathname.startsWith('/admin') || url.pathname.startsWith('/api/admin');
   if (isAdminRoute) {
     if (!session) {
+      if (url.pathname.startsWith('/api/')) {
+        return new NextResponse(JSON.stringify({ error: 'Unauthorized', message: 'உள்நுழைய வேண்டும்' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
       url.pathname = '/login';
       return NextResponse.redirect(url);
     }
@@ -98,14 +104,26 @@ export async function middleware(req: NextRequest) {
       
     if (user?.role !== 'admin') {
       console.warn(`[Security] Unauthorized admin access attempt by user: ${session.id}`);
+      if (url.pathname.startsWith('/api/')) {
+        return new NextResponse(JSON.stringify({ error: 'Forbidden', message: 'நிர்வாகிகளுக்கு மட்டுமே அனுமதி' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
       url.pathname = '/';
       return NextResponse.redirect(url);
     }
   }
 
   // 4. Dashboard Route Protection
-  const isDashboard = url.pathname.startsWith('/dashboard');
+  const isDashboard = url.pathname.startsWith('/dashboard') || url.pathname.startsWith('/api/dashboard');
   if (isDashboard && !session) {
+    if (url.pathname.startsWith('/api/')) {
+      return new NextResponse(JSON.stringify({ error: 'Unauthorized', message: 'உள்நுழைய வேண்டும்' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }

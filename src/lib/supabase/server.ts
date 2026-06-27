@@ -5,25 +5,26 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 // சர்வர் கிளையண்ட் (Server Client with Cookies - strictly for API routes and Server Actions)
 export const createServerClient = () => {
-  const cookieStore = cookies();
-
   return createServerClientSSR<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key',
     {
       cookies: {
-        get(name: string) {
+        async get(name: string) {
+          const cookieStore = await cookies();
           return cookieStore.get(name)?.value;
         },
-        set(name: string, value: string, options: any) {
+        async set(name: string, value: string, options: any) {
           try {
+            const cookieStore = await cookies();
             cookieStore.set({ name, value, ...options });
           } catch (error) {
             // Ignored
           }
         },
-        remove(name: string, options: any) {
+        async remove(name: string, options: any) {
           try {
+            const cookieStore = await cookies();
             cookieStore.set({ name, value: '', ...options });
           } catch (error) {
             // Ignored

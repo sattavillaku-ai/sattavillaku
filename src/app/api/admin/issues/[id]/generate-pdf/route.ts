@@ -10,6 +10,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   try {
     const resolvedParams = await params;
     const supabase = createServerClient();
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    
+    const { data: user } = await supabase.from('users').select('role').eq('id', session.user.id).single();
+    if (user?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     
     // 1. இதழ் மற்றும் கட்டுரை விவரங்களைப் பெறவும்
     const { data: issue, error: issueError } = await supabase

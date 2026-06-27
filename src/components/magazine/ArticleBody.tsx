@@ -23,8 +23,14 @@ export function ArticleBody({ content, articleId, title, author }: ArticleBodyPr
       case 'text':
         return node.text;
       case 'heading':
-        const Tag = `h${node.attrs?.level || 2}` as keyof JSX.IntrinsicElements;
-        return <Tag className="font-serif font-bold text-2xl md:text-3xl mt-10 mb-6 leading-tight">{node.content?.map(renderNode)}</Tag>;
+        const level = node.attrs?.level || 2;
+        const headingClass = "font-serif font-bold text-2xl md:text-3xl mt-10 mb-6 leading-tight";
+        if (level === 1) return <h1 className={headingClass}>{node.content?.map(renderNode)}</h1>;
+        if (level === 3) return <h3 className={headingClass}>{node.content?.map(renderNode)}</h3>;
+        if (level === 4) return <h4 className={headingClass}>{node.content?.map(renderNode)}</h4>;
+        if (level === 5) return <h5 className={headingClass}>{node.content?.map(renderNode)}</h5>;
+        if (level === 6) return <h6 className={headingClass}>{node.content?.map(renderNode)}</h6>;
+        return <h2 className={headingClass}>{node.content?.map(renderNode)}</h2>;
       default:
         return null;
     }

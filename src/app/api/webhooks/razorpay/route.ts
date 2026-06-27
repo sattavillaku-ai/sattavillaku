@@ -5,7 +5,7 @@ import { createServerClient } from '@/lib/supabase/server';
 
 export async function POST(req: Request) {
   const body = await req.text();
-  const signature = headers().get('x-razorpay-signature');
+  const signature = (await headers()).get('x-razorpay-signature');
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET!;
 
   // 1. வெப்ஹூக் கையொப்பத்தை சரிபார்க்கவும்

@@ -1,20 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { Download, Lock, Loader2 } from 'lucide-react';
+import { Download, Lock, Loader2, BookOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 interface DownloadPDFButtonProps {
   issueSlug: string;
-  isSubscriber: boolean;
+  hasAccess: boolean;
   pdfAvailable: boolean;
   className?: string;
 }
 
 export function DownloadPDFButton({ 
   issueSlug, 
-  isSubscriber, 
+  hasAccess, 
   pdfAvailable,
   className 
 }: DownloadPDFButtonProps) {
@@ -22,7 +22,7 @@ export function DownloadPDFButton({
   const router = useRouter();
 
   const handleDownload = async () => {
-    if (!isSubscriber) {
+    if (!hasAccess) {
       router.push('/subscribe');
       return;
     }
@@ -49,25 +49,25 @@ export function DownloadPDFButton({
   return (
     <button
       onClick={handleDownload}
-      disabled={isDownloading || (isSubscriber && !pdfAvailable)}
+      disabled={isDownloading || (hasAccess && !pdfAvailable)}
       className={cn(
-        "flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all shadow-sm",
-        !isSubscriber 
-          ? "bg-muted text-muted-foreground hover:bg-accent border-2 border-dashed"
+        "flex items-center gap-2 px-8 py-4 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95",
+        !hasAccess 
+          ? "bg-amber-600 text-white hover:bg-amber-700"
           : (pdfAvailable ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-muted text-muted-foreground cursor-not-allowed"),
         className
       )}
-      title={!isSubscriber ? "₹30/மாதம் சந்தா எடுத்து PDF பதிவிறக்குங்கள்" : ""}
+      title={!hasAccess ? "₹30/மாதம் சந்தா எடுத்து இதழை வாசியுங்கள்" : ""}
     >
       {isDownloading ? (
         <>
           <Loader2 className="h-5 w-5 animate-spin" />
-          <span>பதிவிறக்குகிறது...</span>
+          <span>திறக்கப்படுகிறது...</span>
         </>
-      ) : !isSubscriber ? (
+      ) : !hasAccess ? (
         <>
           <Lock className="h-5 w-5" />
-          <span>PDF பதிவிறக்கம்</span>
+          <span>இதழ் PDF வாசிக்க (சந்தா தேவை)</span>
         </>
       ) : !pdfAvailable ? (
         <>
@@ -76,8 +76,8 @@ export function DownloadPDFButton({
         </>
       ) : (
         <>
-          <Download className="h-5 w-5" />
-          <span>PDF பதிவிறக்கம்</span>
+          <BookOpen className="h-5 w-5" />
+          <span>இதழ் PDF வாசிக்க</span>
         </>
       )}
     </button>
