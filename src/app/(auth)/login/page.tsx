@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -15,10 +15,19 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+function LoginFormContent() {
   const supabase = createClient();
+  const searchParams = useSearchParams();
+  const errorParam = searchParams.get('error');
+  
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (errorParam) {
+      setMessage(`அங்கீகாரப் பிழை (Auth Error): ${decodeURIComponent(errorParam)}`);
+    }
+  }, [errorParam]);
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -29,19 +38,37 @@ export default function LoginPage() {
     setIsLoading(true);
     setMessage(null);
     
-    const { error } = await supabase.auth.signInWithOtp({
-      email: values.email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
-      },
-    });
+    try {
+      const checkRes = await fetch('/api/auth/check-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: values.email }),
+      });
+      const checkData = await checkRes.json();
+      
+      if (!checkData.registered) {
+        setMessage('மின்னஞ்சல் பதிவு செய்யப்படவில்லை. தயவுசெய்து முதலில் பதிவு செய்யவும். (This email is not registered. Please register first.)');
+        setIsLoading(false);
+        return;
+      }
 
-    if (error) {
-      setMessage('பிழை ஏற்பட்டது: ' + error.message);
-    } else {
-      setMessage('உங்களின் மின்னஞ்சலுக்கு உள்நுழைவு இணைப்பு அனுப்பப்பட்டுள்ளது.');
+      const { error } = await supabase.auth.signInWithOtp({
+        email: values.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+        },
+      });
+
+      if (error) {
+        setMessage('பிழை ஏற்பட்டது: ' + error.message);
+      } else {
+        setMessage('உங்களின் மின்னஞ்சலுக்கு உள்நுழைவு இணைப்பு அனுப்பப்பட்டுள்ளது.');
+      }
+    } catch (err: any) {
+      setMessage('சரிபார்ப்பில் பிழை ஏற்பட்டது: ' + err.message);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   // கூகுள் மூலம் உள்நுழைய (Google OAuth)
@@ -94,7 +121,7 @@ export default function LoginPage() {
         </form>
 
         {message && (
-          <p className="mt-4 text-center text-sm font-medium text-green-600 dark:text-green-400">
+          <p className="mt-4 text-center text-sm font-medium text-destructive dark:text-red-400 bg-destructive/10 p-3 rounded border border-destructive/20 whitespace-pre-wrap">
             {message}
           </p>
         )}
@@ -127,5 +154,18 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-96 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 font-medium">ஏற்றுகிறது...</span>
+      </div>
+    }>
+      <LoginFormContent />
+    </Suspense>
   );
 }

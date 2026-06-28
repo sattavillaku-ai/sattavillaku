@@ -5,12 +5,25 @@ import type { NextRequest } from 'next/server';
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
+  const error = requestUrl.searchParams.get('error');
+  const errorDescription = requestUrl.searchParams.get('error_description');
+
+  if (error) {
+    console.error('Auth callback error:', error, errorDescription);
+    return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(errorDescription || error)}`, request.url));
+  }
 
   if (code) {
     const supabase = createServerClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+    if (exchangeError) {
+      console.error('Error exchanging code for session:', exchangeError);
+      return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(exchangeError.message)}`, request.url));
+    }
+  } else {
+    return NextResponse.redirect(new URL('/login?error=உள்நுழைவு கோட் கிடைக்கவில்லை', request.url));
   }
 
-  // உள்நுழைந்த பிறகு முகப்பு பக்கத்திற்குச் செல்லவும் (Go to home after login)
+  // Go to profile after login
   return NextResponse.redirect(new URL('/profile', request.url));
 }
