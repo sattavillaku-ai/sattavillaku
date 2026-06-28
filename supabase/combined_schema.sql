@@ -181,8 +181,8 @@ begin
     ), 
     new.raw_user_meta_data->>'avatar_url',
     case 
-      when new.email = 'sattavilakku@gmail.com' then 'admin'::user_role
-      else 'reader'::user_role
+      when new.email = 'sattavilakku@gmail.com' then 'admin'::public.user_role
+      else 'reader'::public.user_role
     end
   );
   return new;
@@ -347,7 +347,7 @@ using (bucket_id = 'premium-pdfs' and exists (
 
 -- Force insert or update user role to 'admin' for the email
 insert into public.users (id, email, display_name, role)
-select id, email, raw_user_meta_data->>'display_name', 'admin'::user_role
+select id, email, raw_user_meta_data->>'display_name', 'admin'::public.user_role
 from auth.users
 where email = 'sattavilakku@gmail.com'
-on conflict (id) do update set role = 'admin'::user_role;
+on conflict (id) do update set role = 'admin'::public.user_role;

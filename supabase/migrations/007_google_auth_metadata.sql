@@ -14,8 +14,8 @@ begin
     ), 
     new.raw_user_meta_data->>'avatar_url',
     case 
-      when new.email = 'sattavilakku@gmail.com' then 'admin'::user_role
-      else 'reader'::user_role
+      when new.email = 'sattavilakku@gmail.com' then 'admin'::public.user_role
+      else 'reader'::public.user_role
     end
   );
   return new;
