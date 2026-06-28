@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { createServerClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { IssueCard } from '@/components/magazine/IssueCard';
 import { Metadata } from 'next';
 import { BookOpen, Crown, ArrowRight, ShieldCheck, Zap, Globe, Scale } from 'lucide-react';
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const supabase = createServerClient();
+  const supabase = createAdminClient();
 
   const { data: issues } = await supabase
     .from('issues')

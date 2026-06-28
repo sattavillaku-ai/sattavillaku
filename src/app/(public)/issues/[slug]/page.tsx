@@ -7,6 +7,8 @@ import { DownloadPDFButton } from '@/components/magazine/DownloadPDFButton';
 import { Metadata } from 'next';
 import { ChevronDown, ArrowUp, Calendar, Crown, BookOpen, FileText } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 // SEO Metadata
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const resolvedParams = await params;
@@ -25,20 +27,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       images: [{ url: issue.cover_image_url || '/og-image.jpg' }],
     },
   };
-}
-
-// Static params for ISR
-export async function generateStaticParams() {
-  const { createAdminClient } = await import('@/lib/supabase/server');
-  const supabase = createAdminClient();
-  const { data: issues } = await supabase
-    .from('issues')
-    .select('slug')
-    .eq('status', 'published');
-
-  return issues?.map((issue) => ({
-    slug: issue.slug,
-  })) || [];
 }
 
 export default async function IssuePage({ params }: { params: Promise<{ slug: string }> }) {

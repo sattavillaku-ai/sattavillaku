@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { IssueCard } from '@/components/magazine/IssueCard';
 import { Metadata } from 'next';
 
@@ -15,7 +15,7 @@ export default async function ArchivePage({
   searchParams: Promise<{ category?: string, year?: string, page?: string }> 
 }) {
   const resolvedSearchParams = await searchParams;
-  const supabase = createServerClient();
+  const supabase = createAdminClient();
   const page = parseInt(resolvedSearchParams.page || '1');
   const limit = 12;
   const from = (page - 1) * limit;
