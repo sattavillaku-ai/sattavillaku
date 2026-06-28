@@ -27,6 +27,16 @@ export default function RegisterPage() {
     resolver: zodResolver(registerSchema),
   });
 
+  // கூகுள் மூலம் உள்நுழைய (Google OAuth)
+  const handleGoogleLogin = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/api/auth/callback`,
+      },
+    });
+  };
+
   const onSubmit = async (values: RegisterFormValues) => {
     setIsLoading(true);
     setError(null);
@@ -128,6 +138,26 @@ export default function RegisterPage() {
             {error}
           </p>
         )}
+
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-input" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-background px-2 text-muted-foreground">அல்லது</span>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <button
+              onClick={handleGoogleLogin}
+              className="flex w-full items-center justify-center gap-3 rounded-md bg-background px-3 py-1.5 text-foreground shadow-sm ring-1 ring-inset ring-input hover:bg-accent focus-visible:ring-transparent"
+            >
+              <span className="text-sm font-semibold leading-6">Google மூலம் உள்நுழைய / பதிவு செய்ய</span>
+            </button>
+          </div>
+        </div>
 
         <p className="mt-10 text-center text-sm text-muted-foreground">
           ஏற்கனவே கணக்கு உள்ளதா?{' '}
