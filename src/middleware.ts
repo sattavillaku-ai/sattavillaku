@@ -80,8 +80,24 @@ export async function middleware(req: NextRequest) {
     }
     authAttempts.set(ip, attempt);
   }
+
+  // 3. Global Route Protection: Require user to be logged in to read the website
+  const isAuthRoute = url.pathname.startsWith('/login') || url.pathname.startsWith('/register');
+  const isExcludedApiRoute = url.pathname.startsWith('/api/auth') || url.pathname.startsWith('/api/webhooks');
+  const isPublicAsset = url.pathname.startsWith('/images') || url.pathname.startsWith('/icons') || url.pathname === '/favicon.ico' || url.pathname === '/manifest.json' || url.pathname === '/robots.txt' || url.pathname === '/sitemap.xml';
+
+  if (!session && !isAuthRoute && !isExcludedApiRoute && !isPublicAsset) {
+    if (url.pathname.startsWith('/api/')) {
+      return new NextResponse(JSON.stringify({ error: 'Unauthorized', message: 'உள்நுழைய வேண்டும்' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    url.pathname = '/login';
+    return NextResponse.redirect(url);
+  }
   
-  // 3. Admin Route Protection
+  // 4. Admin Route Protection
   const isAdminRoute = url.pathname.startsWith('/admin') || url.pathname.startsWith('/api/admin');
   if (isAdminRoute) {
     if (!session) {
@@ -115,7 +131,7 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // 4. Dashboard Route Protection
+  // 5. Dashboard Route Protection
   const isDashboard = url.pathname.startsWith('/dashboard') || url.pathname.startsWith('/api/dashboard');
   if (isDashboard && !session) {
     if (url.pathname.startsWith('/api/')) {
