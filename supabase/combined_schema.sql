@@ -182,7 +182,7 @@ begin
     new.raw_user_meta_data->>'avatar_url',
     case 
       when new.email = 'sattavilakku@gmail.com' then 'admin'::user_role
-      else coalesce((new.raw_user_meta_data->>'role')::user_role, 'reader'::user_role)
+      else 'reader'::user_role
     end
   );
   return new;
