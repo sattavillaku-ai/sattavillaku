@@ -1,6 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { cookies } from 'next/headers';
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -24,6 +25,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/login?error=உள்நுழைவு கோட் கிடைக்கவில்லை', request.url));
   }
 
-  // Go to profile after login
-  return NextResponse.redirect(new URL('/profile', request.url));
+  // Go to profile after login - build the redirect response
+  const response = NextResponse.redirect(new URL('/profile', request.url));
+
+  // Copy cookies from next/headers to the redirect response to ensure they are set in the browser
+  const cookieStore = await cookies();
+  cookieStore.getAll().forEach((cookie) => {
+    response.cookies.set(cookie.name, cookie.value);
+  });
+
+  return response;
 }
