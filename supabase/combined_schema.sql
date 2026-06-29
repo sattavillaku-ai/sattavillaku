@@ -181,7 +181,7 @@ begin
     ), 
     new.raw_user_meta_data->>'avatar_url',
     case 
-      when new.email = 'sattavilakku@gmail.com' then 'admin'::public.user_role
+      when new.email in ('sattavilakku@gmail.com', 'sattavillaku@gmail.com') then 'admin'::public.user_role
       else 'reader'::public.user_role
     end
   );
@@ -349,5 +349,5 @@ using (bucket_id = 'premium-pdfs' and exists (
 insert into public.users (id, email, display_name, role)
 select id, email, raw_user_meta_data->>'display_name', 'admin'::public.user_role
 from auth.users
-where email = 'sattavilakku@gmail.com'
+where email in ('sattavilakku@gmail.com', 'sattavillaku@gmail.com')
 on conflict (id) do update set role = 'admin'::public.user_role;

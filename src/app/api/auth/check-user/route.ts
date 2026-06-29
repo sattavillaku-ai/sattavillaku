@@ -8,6 +8,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
+    const isAdminEmail = email === 'sattavilakku@gmail.com' || email === 'sattavillaku@gmail.com';
+    if (isAdminEmail) {
+      return NextResponse.json({ registered: true });
+    }
+
     const adminSupabase = createAdminClient();
     const { data: user, error } = await adminSupabase
       .from('users')
