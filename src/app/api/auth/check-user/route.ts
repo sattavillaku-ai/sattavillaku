@@ -11,12 +11,16 @@ export async function POST(req: Request) {
     const adminSupabase = createAdminClient();
     const { data: user, error } = await adminSupabase
       .from('users')
-      .select('id')
+      .select('id, role')
       .eq('email', email)
       .single();
 
     if (error || !user) {
-      return NextResponse.json({ registered: false });
+      return NextResponse.json({ registered: false, error: 'மின்னஞ்சல் முகவரி பதிவு செய்யப்படவில்லை. (Email address not registered.)' });
+    }
+
+    if (user.role !== 'admin') {
+      return NextResponse.json({ registered: false, error: 'நிர்வாகிகளுக்கு மட்டுமே அனுமதி. (Only admins are allowed to log in.)' });
     }
 
     return NextResponse.json({ registered: true });

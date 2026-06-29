@@ -130,15 +130,13 @@ export function Header() {
 
         {/* செயல்கள் (Actions) */}
         <div className="flex items-center gap-4">
-          <Link href="/subscribe" className="hidden sm:flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-full hover:bg-primary/90 hover:shadow-lg transition-all font-black text-[10px] uppercase tracking-wider active:scale-95">
-            <Crown className="h-4 w-4" />
-            சந்தா செலுத்துக
-          </Link>
-          
-          <div className="h-8 w-px bg-border hidden sm:block mx-2" />
-
-          <Link href="/profile" className="p-2.5 rounded-xl border border-border bg-card hover:bg-primary hover:text-white transition-all shadow-sm active:scale-95">
+          <Link 
+            href={isAdmin ? "/admin/issues" : "/login"} 
+            className="p-2.5 rounded-xl border border-border bg-card hover:bg-primary hover:text-white transition-all shadow-sm active:scale-95 flex items-center gap-2"
+            title={isAdmin ? "நிர்வாக பலகை (Admin Dashboard)" : "உள்நுழைவு (Login)"}
+          >
             <User className="h-5 w-5" />
+            {isAdmin && <span className="hidden sm:inline text-xs font-black uppercase tracking-wider">Admin</span>}
           </Link>
 
           {/* மொபைல் மெனு (Mobile Toggle) */}
@@ -179,10 +177,12 @@ export function Header() {
                 <ShieldAlert className="h-6 w-6" />
               </Link>
             )}
-            <Link href="/subscribe" onClick={() => setIsMobileMenuOpen(false)} className="text-primary flex items-center gap-3">
-              <Crown className="h-7 w-7" />
-              <span>சந்தா பெறு</span>
-            </Link>
+            {!isAdmin && (
+              <Link href="/login" onClick={() => setIsMobileMenuOpen(false)} className="text-primary flex items-center justify-between border-b pb-4">
+                <span>உள்நுழைவு (Login)</span>
+                <User className="h-6 w-6 opacity-20" />
+              </Link>
+            )}
           </nav>
           
           <div className="mt-12 flex items-center justify-between bg-secondary p-6 rounded-3xl text-white shadow-2xl">

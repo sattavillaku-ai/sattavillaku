@@ -81,19 +81,18 @@ export async function middleware(req: NextRequest) {
     authAttempts.set(ip, attempt);
   }
 
-  // 3. Global Route Protection: Require user to be logged in to read the website
-  const isAuthRoute = url.pathname.startsWith('/login') || url.pathname.startsWith('/register');
-  const isExcludedApiRoute = url.pathname.startsWith('/api/auth') || url.pathname.startsWith('/api/webhooks');
-  const isPublicAsset = url.pathname.startsWith('/images') || url.pathname.startsWith('/icons') || url.pathname === '/favicon.ico' || url.pathname === '/manifest.json' || url.pathname === '/robots.txt' || url.pathname === '/sitemap.xml';
+  // 3. Redirect obsolete user-facing auth/payment/dashboard routes to homepage
+  const isRemovedRoute = 
+    url.pathname.startsWith('/register') || 
+    url.pathname.startsWith('/subscribe') || 
+    url.pathname.startsWith('/billing') || 
+    url.pathname.startsWith('/profile') || 
+    url.pathname.startsWith('/dashboard') || 
+    url.pathname.startsWith('/api/dashboard') ||
+    url.pathname.startsWith('/api/subscription');
 
-  if (!session && !isAuthRoute && !isExcludedApiRoute && !isPublicAsset) {
-    if (url.pathname.startsWith('/api/')) {
-      return new NextResponse(JSON.stringify({ error: 'Unauthorized', message: 'உள்நுழைய வேண்டும்' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-    url.pathname = '/login';
+  if (isRemovedRoute) {
+    url.pathname = '/';
     return NextResponse.redirect(url);
   }
   
@@ -129,19 +128,6 @@ export async function middleware(req: NextRequest) {
       url.pathname = '/';
       return NextResponse.redirect(url);
     }
-  }
-
-  // 5. Dashboard Route Protection
-  const isDashboard = url.pathname.startsWith('/dashboard') || url.pathname.startsWith('/api/dashboard');
-  if (isDashboard && !session) {
-    if (url.pathname.startsWith('/api/')) {
-      return new NextResponse(JSON.stringify({ error: 'Unauthorized', message: 'உள்நுழைய வேண்டும்' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
   }
 
   return res;

@@ -47,7 +47,7 @@ function LoginFormContent() {
       const checkData = await checkRes.json();
       
       if (!checkData.registered) {
-        setMessage('மின்னஞ்சல் பதிவு செய்யப்படவில்லை. தயவுசெய்து முதலில் பதிவு செய்யவும். (This email is not registered. Please register first.)');
+        setMessage(checkData.error || 'மின்னஞ்சல் பதிவு செய்யப்படவில்லை. தயவுசெய்து முதலில் பதிவு செய்யவும். (This email is not registered. Please register first.)');
         setIsLoading(false);
         return;
       }
@@ -75,21 +75,11 @@ function LoginFormContent() {
     }
   };
 
-  // கூகுள் மூலம் உள்நுழைய (Google OAuth)
-  const handleGoogleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/api/auth/callback`,
-      },
-    });
-  };
-
   return (
     <div className="flex min-h-[calc(100-16)] flex-col justify-center px-6 py-12 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
         <h2 className="mt-10 text-center text-3xl font-bold font-serif leading-9 tracking-tight text-foreground">
-          உள்நுழைவு (Login)
+          நிர்வாகி உள்நுழைவு (Admin Login)
         </h2>
       </div>
 
@@ -97,14 +87,14 @@ function LoginFormContent() {
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div>
             <label htmlFor="email" className="block text-sm font-medium leading-6 text-foreground">
-              மின்னஞ்சல் முகவரி (Email Address)
+              நிர்வாகி மின்னஞ்சல் (Admin Email)
             </label>
             <div className="mt-2">
               <input
                 {...register('email')}
                 type="email"
                 className="block w-full rounded-md border-0 py-1.5 text-foreground shadow-sm ring-1 ring-inset ring-input focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 bg-background"
-                placeholder="you@example.com"
+                placeholder="admin@example.com"
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-destructive">{errors.email.message}</p>
@@ -129,33 +119,6 @@ function LoginFormContent() {
             {message}
           </p>
         )}
-
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-input" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-background px-2 text-muted-foreground">அல்லது</span>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <button
-              onClick={handleGoogleLogin}
-              className="flex w-full items-center justify-center gap-3 rounded-md bg-background px-3 py-1.5 text-foreground shadow-sm ring-1 ring-inset ring-input hover:bg-accent focus-visible:ring-transparent"
-            >
-              <span className="text-sm font-semibold leading-6">Google மூலம் உள்நுழைய</span>
-            </button>
-          </div>
-        </div>
-
-        <p className="mt-10 text-center text-sm text-muted-foreground">
-          கணக்கு இல்லையா?{' '}
-          <Link href="/register" className="font-semibold leading-6 text-primary hover:text-primary/80">
-            இப்போதே பதிவு செய்யுங்கள்
-          </Link>
-        </p>
       </div>
     </div>
   );

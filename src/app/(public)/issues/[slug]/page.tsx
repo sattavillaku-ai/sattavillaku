@@ -49,45 +49,10 @@ export default async function IssuePage({ params }: { params: Promise<{ slug: st
     .eq('issue_id', issue.id)
     .order('position', { ascending: true });
 
-  // பயனர் சந்தா மற்றும் மேலாண்மை சரிபார்ப்பு (User subscription and Admin check)
-  const { data: { session } } = await supabase.auth.getSession();
-  let isSubscribed = false;
-  let isAdmin = false;
-
-  if (session) {
-    // சந்தா விவரங்கள்
-    const { data: sub } = await supabase
-      .from('subscriptions')
-      .select('status, current_period_end')
-      .eq('user_id', session.user.id)
-      .single();
-    
-    isSubscribed = sub?.status === 'active' && new Date(sub.current_period_end) > new Date();
-
-    // நிர்வாகி விவரங்கள்
-    const { data: userData } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', session.user.id)
-      .single();
-    isAdmin = userData?.role === 'admin';
-  }
-
-  // நடப்பு மாத இதழா எனச் சரிபார்க்கவும் (Is it the current month's issue?)
-  const pubDate = issue.published_at ? new Date(issue.published_at) : null;
-  const now = new Date();
-  const isCurrentMonth = pubDate 
-    ? (pubDate.getFullYear() === now.getFullYear() && pubDate.getMonth() === now.getMonth())
-    : false;
-
-  // இந்த இதழை வாசிக்க பணம் செலுத்த வேண்டுமா?
-  // 1. இலவச இதழ் இல்லை.
-  // 2. மற்றும் இது நடப்பு மாத இதழ்.
-  const needsPay = isCurrentMonth && !issue.is_free;
-
-  // இதழின் முழு உள்ளடக்கத்தை அணுகக்கூடிய அனுமதி
-  const canAccessFull = !needsPay || isSubscribed || isAdmin;
+  // இதழின் முழு உள்ளடக்கத்தை அணுகக்கூடிய அனுமதி (எல்லோருக்கும் அனுமதி - Free access for all)
+  const canAccessFull = true;
   const pdfAvailable = !!issue.pdf_url;
+  const needsPay = false;
 
   // NewsArticle Schema
   const jsonLd = {
@@ -135,17 +100,10 @@ export default async function IssuePage({ params }: { params: Promise<{ slug: st
                 <Calendar className="w-3.5 h-3.5" />
                 <span>தொகுதி {issue.volume_number}, இதழ் {issue.issue_number}</span>
               </span>
-              {needsPay ? (
-                <span className="bg-amber-100 text-amber-800 text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg flex items-center gap-1.5">
-                  <Crown className="w-3.5 h-3.5" />
-                  <span>நடப்பு மாத இதழ் (சந்தா தேவை)</span>
-                </span>
-              ) : (
-                <span className="bg-green-100 text-green-800 text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5" />
-                  <span>முந்தைய இதழ் (இலவசம்)</span>
-                </span>
-              )}
+              <span className="bg-green-100 text-green-800 text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>முழு இதழ் (இலவசம்)</span>
+              </span>
             </div>
 
             <h1 className="text-3xl md:text-5xl font-serif font-black text-foreground leading-tight tracking-tight">
