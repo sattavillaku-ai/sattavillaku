@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     const resend = new Resend(apiKey);
 
     const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
-    const toEmail = process.env.CONTACT_RECEIVER_EMAIL || 'sattavilakku@gmail.com';
+    const toEmail = process.env.CONTACT_RECEIVER_EMAIL || 'sattavillaku@gmail.com';
 
     const { data, error } = await resend.emails.send({
       from: `சட்டவிளக்கு தொடர்பு <${fromEmail}>`,

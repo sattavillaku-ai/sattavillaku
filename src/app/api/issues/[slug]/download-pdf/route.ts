@@ -10,7 +10,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     // 1. இதழ் விவரங்களைப் பெறவும்
     const { data: issue, error: issueError } = await supabase
       .from('issues')
-      .select('id, pdf_url, published_at')
+      .select('id, pdf_url, published_at, is_free')
       .eq('slug', resolvedParams.slug)
       .single();
 
@@ -25,7 +25,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
       ? (pubDate.getFullYear() === now.getFullYear() && pubDate.getMonth() === now.getMonth())
       : false;
 
-    if (isCurrentMonth) {
+    // வாசிக்க பணம் செலுத்த வேண்டுமா? (Check if payment is required: current month & not free)
+    const needsPay = isCurrentMonth && !issue.is_free;
+
+    if (needsPay) {
       if (!session) {
         return NextResponse.json({ error: 'உள்நுழைய வேண்டும்', message: 'இத்தற்போதைய இதழைப் பார்க்க முதலில் உள்நுழையவும்.' }, { status: 401 });
       }
