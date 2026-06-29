@@ -60,7 +60,11 @@ function LoginFormContent() {
       });
 
       if (error) {
-        setMessage('பிழை ஏற்பட்டது: ' + error.message);
+        if (error.status === 504 || error.message === '{}' || !error.message) {
+          setMessage('மின்னஞ்சல் அனுப்புவதில் பிழை (SMTP Timeout). தயவுசெய்து உங்கள் Supabase Dashboard-இல் Auth -> Providers -> SMTP அமைப்புகளைச் சரிபார்க்கவும்.');
+        } else {
+          setMessage('பிழை ஏற்பட்டது: ' + error.message);
+        }
       } else {
         setMessage('உங்களின் மின்னஞ்சலுக்கு உள்நுழைவு இணைப்பு அனுப்பப்பட்டுள்ளது.');
       }
