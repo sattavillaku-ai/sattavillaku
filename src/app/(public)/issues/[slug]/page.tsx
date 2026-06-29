@@ -240,13 +240,14 @@ export default async function IssuePage({ params }: { params: Promise<{ slug: st
       )}
 
       {/* Back to top button */}
-      <button 
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed bottom-8 right-8 p-4 bg-primary text-primary-foreground rounded-full shadow-lg opacity-0 hover:opacity-100 transition-opacity z-50 md:hidden"
+      <a 
+        href="#"
+        className="fixed bottom-8 right-8 p-4 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-all z-50 hidden md:flex items-center justify-center"
         id="back-to-top"
+        title="மீண்டும் மேலே (Back to top)"
       >
         <ArrowUp className="h-6 w-6" />
-      </button>
+      </a>
     </div>
   );
 }
