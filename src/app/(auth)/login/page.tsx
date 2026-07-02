@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { Loader2, Mail } from 'lucide-react';
 
@@ -16,7 +15,6 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 function LoginFormContent() {
-  const supabase = createClient();
   const searchParams = useSearchParams();
   const errorParam = searchParams.get('error');
   
@@ -39,37 +37,20 @@ function LoginFormContent() {
     setMessage(null);
     
     try {
-      const checkRes = await fetch('/api/auth/check-user', {
+      const res = await fetch('/api/auth/send-magic-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: values.email }),
       });
-      const checkData = await checkRes.json();
+      const data = await res.json();
       
-      if (!checkData.registered) {
-        setMessage(checkData.error || 'மின்னஞ்சல் பதிவு செய்யப்படவில்லை. தயவுசெய்து முதலில் பதிவு செய்யவும். (This email is not registered. Please register first.)');
-        setIsLoading(false);
-        return;
-      }
-
-      const { error } = await supabase.auth.signInWithOtp({
-        email: values.email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/api/auth/callback`,
-        },
-      });
-
-      if (error) {
-        if (error.status === 504 || error.message === '{}' || !error.message) {
-          setMessage('மின்னஞ்சல் அனுப்புவதில் பிழை (SMTP Timeout). தயவுசெய்து உங்கள் Supabase Dashboard-இல் Auth -> Providers -> SMTP அமைப்புகளைச் சரிபார்க்கவும்.');
-        } else {
-          setMessage('பிழை ஏற்பட்டது: ' + error.message);
-        }
+      if (!res.ok || data.error) {
+        setMessage(data.error || 'பிழை ஏற்பட்டது. தயவுசெய்து மீண்டும் முயற்சிக்கவும். (An error occurred. Please try again.)');
       } else {
         setMessage('உங்களின் மின்னஞ்சலுக்கு உள்நுழைவு இணைப்பு அனுப்பப்பட்டுள்ளது.');
       }
     } catch (err: any) {
-      setMessage('சரிபார்ப்பில் பிழை ஏற்பட்டது: ' + err.message);
+      setMessage('உள்நுழைவதில் பிழை ஏற்பட்டது: ' + err.message);
     } finally {
       setIsLoading(false);
     }
