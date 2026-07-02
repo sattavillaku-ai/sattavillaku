@@ -17,7 +17,7 @@ export async function POST(req: Request) {
 
     const resend = new Resend(apiKey);
 
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@sattavilakku.com';
     const toEmail = process.env.CONTACT_RECEIVER_EMAIL || 'sattavillaku@gmail.com';
 
     const { data, error } = await resend.emails.send({

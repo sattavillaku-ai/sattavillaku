@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     }
 
     const resend = new Resend(resendApiKey);
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@sattavilakku.com';
 
     console.log(`Sending magic link email from ${fromEmail} to ${trimmedEmail}`);
 
