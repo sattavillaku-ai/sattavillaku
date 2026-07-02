@@ -114,7 +114,7 @@ export async function POST(req: Request) {
     if (emailError) {
       console.error('Resend Error:', emailError);
       return NextResponse.json({ 
-        error: 'மின்னஞ்சல் அனுப்புவதில் பிழை ஏற்பட்டது. (Failed to send login email.)' 
+        error: `மின்னஞ்சல் அனுப்புவதில் பிழை ஏற்பட்டது: ${emailError.message || JSON.stringify(emailError)} (Failed to send login email.)` 
       }, { status: 500 });
     }
 
