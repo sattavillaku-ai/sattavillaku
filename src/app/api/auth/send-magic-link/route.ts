@@ -50,14 +50,15 @@ export async function POST(req: Request) {
       },
     });
 
-    if (linkError || !data?.properties?.action_link) {
+    if (linkError || !data?.properties?.hashed_token) {
       console.error('Supabase generateLink Error:', linkError);
       return NextResponse.json({ 
         error: 'உள்நுழைவு இணைப்பை உருவாக்குவதில் பிழை ஏற்பட்டது. (Failed to generate login link.)' 
       }, { status: 500 });
     }
 
-    const actionLink = data.properties.action_link;
+    // Direct callback link using the token_hash to bypass Supabase redirect and Implicit/PKCE flow issues
+    const actionLink = `${origin}/api/auth/callback?token_hash=${data.properties.hashed_token}&type=magiclink`;
 
     // 3. Send email via Resend
     const resendApiKey = process.env.RESEND_API_KEY;
