@@ -24,5 +24,5 @@ Sattavillaku is committed to maintaining the highest security standards to prote
 
 ## Reporting Vulnerabilities
 If you discover a security vulnerability within the Sattavillaku platform, please report it immediately.
-- **Contact:** contact@sattavillaku.in
+- **Contact:** contact@sattavilakku.com
 - We aim to acknowledge all reports within 48 hours and resolve critical issues within 7 days.

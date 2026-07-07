@@ -15,10 +15,10 @@ export function Footer() {
       navigator.share({
         title: 'சட்டவிளக்கு (Sattavilakku)',
         text: 'சமூக விழிப்புணர்வு மற்றும் நீதிக்கான உன்னத தமிழ் இதழ்.',
-        url: typeof window !== 'undefined' ? window.location.origin : 'https://sattavilakku.in',
+        url: typeof window !== 'undefined' ? window.location.origin : 'https://sattavilakku.com',
       }).catch(console.error);
     } else if (typeof navigator !== 'undefined') {
-      navigator.clipboard.writeText(typeof window !== 'undefined' ? window.location.origin : 'https://sattavilakku.in');
+      navigator.clipboard.writeText(typeof window !== 'undefined' ? window.location.origin : 'https://sattavilakku.com');
       alert('இணைப்பு நகலெடுக்கப்பட்டது! (Link copied to clipboard)');
     }
   };
@@ -64,7 +64,7 @@ export function Footer() {
                 <MessageCircle className="h-4 w-4 md:h-5 md:w-5" />
               </Link>
               <Link 
-                href="https://t.me/share/url?url=https://sattavilakku.in&text=சமூக%20விழிப்புணர்வு%20மற்றும்%20நீதிக்கான%20உன்னத%20தமிழ்%20இதழ்%20-%20சட்டவிளக்கு" 
+                href="https://t.me/share/url?url=https://sattavilakku.com&text=சமூக%20விழிப்புணர்வு%20மற்றும்%20நீதிக்கான%20உன்னத%20தமிழ்%20இதழ்%20-%20சட்டவிளக்கு" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-xl"

@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/admin/', '/api/', '/dashboard/'],
     },
-    sitemap: 'https://sattavillaku.com/sitemap.xml',
+    sitemap: 'https://sattavilakku.com/sitemap.xml',
   };
 }

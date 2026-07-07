@@ -42,7 +42,7 @@ e) Set up a Webhook in Razorpay Settings:
 Resend is used to send Magic Login Links and subscription confirmations:
 a) Sign up at Resend (https://resend.com).
 b) Go to "API Keys" -> "Create API Key" (choose Full Access permission).
-c) Verify your sending domain (e.g., sattavillaku.in) in Resend to send emails from a custom email address.
+c) Verify your sending domain (e.g., sattavilakku.com) in Resend to send emails from a custom email address.
 
 
 ========================================================================
@@ -65,8 +65,8 @@ RAZORPAY_WEBHOOK_SECRET=your_webhook_secret
 # --- RESEND EMAIL SERVICE ---
 # Get this from Resend Dashboard -> API Keys
 RESEND_API_KEY=re_your_resend_api_key
-# The sender email address (e.g. noreply@sattavillaku.in)
-RESEND_FROM_EMAIL=noreply@sattavillaku.in
+# The sender email address (e.g. noreply@sattavilakku.com)
+RESEND_FROM_EMAIL=noreply@sattavilakku.com
 
 # --- APP SETUP ---
 # NextAuth Secret is used for cryptographic operations (generate a random 32-character string)

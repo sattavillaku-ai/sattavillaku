@@ -9,7 +9,7 @@ DB_URL=$SUPABASE_DB_URL
 STORAGE_KEY=$SUPABASE_SERVICE_ROLE_KEY
 PROJECT_REF=$SUPABASE_PROJECT_ID
 RESEND_KEY=$RESEND_API_KEY
-EMAIL_TO="admin@sattavillaku.com"
+EMAIL_TO="sattavilakku@gmail.com"
 
 DATE=$(date +%Y-%m-%d)
 FILENAME="backup-${DATE}.sql.gz"
@@ -36,7 +36,7 @@ curl -X POST "https://api.resend.com/emails" \
   -H "Authorization: Bearer ${RESEND_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
-    "from": "noreply@sattavillaku.in",
+    "from": "noreply@sattavilakku.com",
     "to": "'"${EMAIL_TO}"'",
     "subject": "✅ Database Backup Successful - '${DATE}'",
     "html": "<p>சட்டவிளக்கு தரவுத்தள காப்புப்பிரதி (Backup) வெற்றிகரமாக சேமிக்கப்பட்டது.</p><p>நாள்: '${DATE}'</p>"

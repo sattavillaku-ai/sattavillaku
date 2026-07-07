@@ -3,7 +3,7 @@ import { createServerClient } from '@/lib/supabase/server';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = createServerClient();
-  const baseUrl = 'https://sattavillaku.com';
+  const baseUrl = 'https://sattavilakku.com';
 
   // இதழ் இணைப்புகள் (Issue links)
   const { data: issues } = await supabase
