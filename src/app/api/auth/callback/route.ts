@@ -1,7 +1,7 @@
-import { createServerClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { cookies } from 'next/headers';
+import { createServerClient as createServerClientSSR } from '@supabase/ssr';
+import type { Database } from '@/types/database.types';
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -15,24 +15,34 @@ export async function GET(request: NextRequest) {
   }
 
   if (code) {
-    const supabase = createServerClient();
+    // Go to admin issues dashboard after successful login
+    const response = NextResponse.redirect(new URL('/admin/issues', request.url));
+
+    const supabase = createServerClientSSR<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key',
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options);
+            });
+          },
+        },
+      }
+    );
+
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
     if (exchangeError) {
       console.error('Error exchanging code for session:', exchangeError);
       return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(exchangeError.message)}`, request.url));
     }
-  } else {
-    return NextResponse.redirect(new URL('/login?error=உள்நுழைவு கோட் கிடைக்கவில்லை', request.url));
+
+    return response;
   }
 
-  // Go to profile after login - build the redirect response
-  const response = NextResponse.redirect(new URL('/profile', request.url));
-
-  // Copy cookies from next/headers to the redirect response to ensure they are set in the browser
-  const cookieStore = await cookies();
-  cookieStore.getAll().forEach((cookie) => {
-    response.cookies.set(cookie.name, cookie.value);
-  });
-
-  return response;
+  return NextResponse.redirect(new URL('/login?error=உள்நுழைவு கோட் கிடைக்கவில்லை', request.url));
 }
