@@ -11,6 +11,7 @@ const issueSchema = z.object({
   cover_image_url: z.string().nullable().optional(),
   status: z.enum(['draft', 'published', 'archived']),
   is_free: z.boolean().default(false),
+  pdf_url: z.string().nullable().optional(),
 });
 
 export async function POST(req: Request) {

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { Loader2, Upload, ArrowLeft, FileText } from 'lucide-react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 
 export default function NewIssuePage() {
   const router = useRouter();
@@ -31,25 +32,36 @@ export default function NewIssuePage() {
   const issue = watch('issue_number');
   
   const handleVolumeIssueChange = () => {
-    setValue('slug', `vol-${volume}-issue-${issue}`);
+     setValue('slug', `vol-${volume}-issue-${issue}`);
   };
+
+  const supabase = createClient();
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
-      const res = await fetch('/api/admin/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.url) setCoverImage(data.url);
-    } catch (error) {
-      alert('படம் பதிவேற்றுவதில் பிழை (Upload failed)');
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
+      const filePath = `uploads/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('magazine-assets')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('magazine-assets')
+        .getPublicUrl(filePath);
+
+      setCoverImage(publicUrl);
+    } catch (error: any) {
+      alert(error.message || 'படம் பதிவேற்றுவதில் பிழை (Upload failed)');
     }
   };
 
@@ -60,22 +72,23 @@ export default function NewIssuePage() {
     setIsPdfUploading(true);
     setPdfName(file.name);
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
-      const res = await fetch('/api/admin/upload?bucket=premium-pdfs', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.path) {
-        setPdfPath(data.path);
-      } else {
-        alert(data.error || 'PDF பதிவேற்றுவதில் பிழை (Upload failed)');
-      }
-    } catch (error) {
-      alert('PDF பதிவேற்றுவதில் பிழை (Upload failed)');
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
+      const filePath = `uploads/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('premium-pdfs')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      setPdfPath(filePath);
+    } catch (error: any) {
+      alert(error.message || 'PDF பதிவேற்றுவதில் பிழை (Upload failed)');
     } finally {
       setIsPdfUploading(false);
     }
@@ -96,7 +109,7 @@ export default function NewIssuePage() {
         router.push(`/admin/issues/${newIssue.id}/edit`);
       } else {
         const error = await res.json();
-        alert(error.message || 'பிழை ஏற்பட்டது');
+        alert(error.error || error.message || 'பிழை ஏற்பட்டது');
       }
     } catch (error) {
       console.error(error);
