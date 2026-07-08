@@ -8,8 +8,8 @@ import { BookOpen, Crown, ArrowRight, ShieldCheck, Zap, Globe, Scale } from 'luc
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: 'சட்டவிளக்கு — தமிழகத்தின் உன்னத தமிழ் இதழ்',
-  description: 'சட்டம், அரசியல் மற்றும் சமூக விழிப்புணர்வுக்கான தமிழ் இணைய இதழ். நீதியின் குரலாக ஒலிக்கிறோம்.',
+  title: 'சட்டவிளக்கு — சட்டம், அரசியல் & சமூக விழிப்புணர்வு இணைய இதழ் | Sattavilakku',
+  description: 'சட்டவிளக்கு (Sattavilakku) - சட்டம், சட்ட செய்திகள், சமகால அரசியல் மற்றும் சமூக விழிப்புணர்வுக்கான தமிழ் மாதாந்திர இணைய இதழ். நீதியின் குரலாக ஒலிக்கிறோம்.',
 };
 
 export default async function HomePage() {
@@ -25,8 +25,30 @@ export default async function HomePage() {
   const latestIssue = issues?.[0];
   const otherIssues = issues?.slice(1) || [];
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    'name': 'சட்டவிளக்கு (Sattavilakku)',
+    'url': 'https://sattavilakku.com',
+    'description': 'செய்தி, அரசியல் மற்றும் சட்ட விழிப்புணர்வுக்கான தமிழ் இணைய இதழ்.',
+    'publisher': {
+      '@type': 'NewsMediaOrganization',
+      'name': 'சட்டவிளக்கு',
+      'alternateName': 'Sattavilakku',
+      'url': 'https://sattavilakku.com',
+      'logo': {
+        '@type': 'ImageObject',
+        'url': 'https://sattavilakku.com/images/sattavillaku-logo.jpeg'
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col gap-16 md:gap-24 pb-20 md:pb-32 overflow-hidden">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* 1. பிரதான ஹீரோ பகுதி (Main Owner & Magazine Hero Section) */}
       <section className="relative w-full min-h-[90svh] md:min-h-[80vh] flex items-center pt-24 md:pt-28 bg-secondary overflow-hidden">
         {/* Background Elements */}

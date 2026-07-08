@@ -1,3 +1,13 @@
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'திரும்பப் பெறுதல் கொள்கை | சட்டவிளக்கு - Refund Policy',
+  description: 'சட்டவிளக்கு (Sattavilakku) இதழின் சந்தா கட்டணம் திரும்பப் பெறுதல் கொள்கை.',
+  alternates: {
+    canonical: 'https://sattavilakku.com/refund',
+  },
+};
+
 export default function RefundPage() {
   return (
     <div className="container mx-auto px-4 py-16 max-w-4xl font-serif">
@@ -16,7 +26,7 @@ export default function RefundPage() {
         </ul>
 
         <h2 className="text-xl font-bold mt-8">தொடர்புக்கு</h2>
-        <p>பணம் தொடர்பான ஏதேனும் சிக்கல்கள் இருந்தால் support@sattavillaku.com என்ற மின்னஞ்சலில் தொடர்பு கொள்ளவும்.</p>
+        <p>பணம் தொடர்பான ஏதேனும் சிக்கல்கள் இருந்தால் support@sattavilakku.com என்ற மின்னஞ்சலில் தொடர்பு கொள்ளவும்.</p>
       </div>
     </div>
   );

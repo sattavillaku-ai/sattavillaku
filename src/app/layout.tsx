@@ -20,28 +20,44 @@ const notoSansTamil = Noto_Sans_Tamil({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://sattavillaku.com'),
+  metadataBase: new URL('https://sattavilakku.com'),
   title: {
-    default: 'சட்டவிளக்கு — சட்டமும் சமூகமும்',
-    template: '%s | சட்டவிளக்கு'
+    default: 'சட்டவிளக்கு — சட்டம், அரசியல் & சமூக விழிப்புணர்வு இணைய இதழ் | Sattavilakku',
+    template: '%s | சட்டவிளக்கு - Sattavilakku'
   },
-  description: 'செய்தி, அரசியல் மற்றும் சட்ட விழிப்புணர்வுக்கான தமிழ் இணைய இதழ்.',
-  keywords: ['தமிழ் சட்டம்', 'தமிழ் அரசியல்', 'சட்டவிளக்கு இதழ்', 'நீதிமன்ற செய்திகள்'],
+  description: 'சட்டவிளக்கு (Sattavilakku) - சட்டம், சட்ட செய்திகள், சமகால அரசியல் மற்றும் சமூக விழிப்புணர்வுக்கான தமிழ் மாதாந்திர இணைய இதழ். நீதியின் குரலாக ஒலிக்கிறோம்.',
+  keywords: [
+    'சட்டவிளக்கு', 
+    'Sattavilakku', 
+    'sattavilakku.com', 
+    'தமிழ் சட்டம்', 
+    'தமிழ் அரசியல்', 
+    'சட்டவிளக்கு இதழ்', 
+    'நீதிமன்ற செய்திகள்', 
+    'சட்ட செய்திகள்', 
+    'Law magazine Tamil', 
+    'Tamil Law News', 
+    'Satta Vilakku', 
+    'சட்ட விழிப்புணர்வு'
+  ],
   authors: [{ name: 'சட்டவிளக்கு குழு' }],
+  alternates: {
+    canonical: 'https://sattavilakku.com',
+  },
   openGraph: {
     type: 'website',
     locale: 'ta_IN',
-    url: 'https://sattavillaku.com',
-    siteName: 'சட்டவிளக்கு',
-    title: 'சட்டவிளக்கு — சட்டமும் சமூகமும்',
-    description: 'செய்தி, அரசியல் மற்றும் சட்ட விழிப்புணர்வுக்கான தமிழ் இணைய இதழ்.',
-    images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: 'சட்டவிளக்கு' }],
+    url: 'https://sattavilakku.com',
+    siteName: 'சட்டவிளக்கு (Sattavilakku)',
+    title: 'சட்டவிளக்கு — சட்டம், அரசியல் & சமூக விழிப்புணர்வு இணைய இதழ்',
+    description: 'சட்டவிளக்கு (Sattavilakku) - சட்டம், சட்ட செய்திகள், சமகால அரசியல் மற்றும் சமூக விழிப்புணர்வுக்கான தமிழ் மாதாந்திர இணைய இதழ்.',
+    images: [{ url: '/images/photo.jpeg', width: 1200, height: 630, alt: 'சட்டவிளக்கு' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'சட்டவிளக்கு — சட்டமும் சமூகமும்',
-    description: 'செய்தி, அரசியல் மற்றும் சட்ட விழிப்புணர்வுக்கான தமிழ் இணைய இதழ்.',
-    images: ['/og-image.jpg'],
+    title: 'சட்டவிளக்கு — சட்டம், அரசியல் & சமூக விழிப்புணர்வு இணைய இதழ்',
+    description: 'சட்டவிளக்கு (Sattavilakku) - சட்டம், சட்ட செய்திகள், சமகால அரசியல் மற்றும் சமூக விழிப்புணர்வுக்கான தமிழ் மாதாந்திர இணைய இதழ்.',
+    images: ['/images/photo.jpeg'],
   },
 };
 
