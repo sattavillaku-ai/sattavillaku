@@ -24,6 +24,41 @@ export default function AboutPage() {
           <strong>சட்டவிளக்கு</strong> (Sattavilakku) என்பது தமிழ்ச் சூழலில் சட்டம், அரசியல் மற்றும் சமூக நீதி குறித்த ஆழமான புரிதலை ஏற்படுத்தும் நோக்கில் தொடங்கப்பட்ட ஒரு இணைய இதழ். சாமானிய மக்களும் சட்டத்தின் நுணுக்கங்களை எளிதாகப் புரிந்து கொள்ள வேண்டும் என்பதே எங்களின் முதன்மை நோக்கம்.
         </p>
 
+        {/* Owner Section */}
+        <div className="my-12 not-prose bg-muted/40 border border-border/60 rounded-3xl p-6 md:p-10 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+            {/* Owner Photo */}
+            <div className="md:col-span-4 flex justify-center">
+              <div className="relative aspect-[3/4.2] w-full max-w-[200px] group">
+                <div className="absolute inset-2 bg-primary/10 rounded-2xl blur-xl group-hover:bg-primary/20 transition-all duration-700" />
+                <div className="relative h-full w-full rounded-2xl overflow-hidden border-4 border-background shadow-md">
+                  <img
+                    src="/images/photo.jpeg"
+                    alt="K. இளையராஜா, M.Sc., LL.B. — உரிமையாளர் & ஆசிரியர்"
+                    className="object-cover w-full h-full"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Owner Info */}
+            <div className="md:col-span-8 space-y-3">
+              <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full">
+                நிறுவனர் & முதன்மை ஆசிரியர்
+              </span>
+              
+              <h2 className="text-2xl md:text-3xl font-serif font-black text-foreground">
+                K. இளையராஜா, <span className="text-sm md:text-base font-sans font-semibold text-muted-foreground">M.Sc., LL.B.</span>
+              </h2>
+              
+              <blockquote className="text-base text-foreground/90 font-serif leading-relaxed italic border-l-2 border-primary pl-4 my-3">
+                &quot;சட்டத்தின் வெளிச்சம் ஒவ்வொரு சாமானியனுக்கும் சென்றடைய வேண்டும் என்பதே எங்களின் நோக்கம். சட்டம் என்பது வெறும் புத்தகங்களில் இருக்கும் வார்த்தைகள் அல்ல, அது நமது உரிமைகளின் கவசம். சட்டவிளக்கு இதழ் மூலம் நீதியையும் சமூக விழிப்புணர்வையும் தொடர்ந்து பரப்புவோம்.&quot;
+              </blockquote>
+            </div>
+          </div>
+        </div>
+
         <h2 className="text-2xl font-bold font-serif border-b pb-2">எங்களின் பணிகள்</h2>
         <ul className="list-disc pl-6 space-y-4">
           <li>உயர் நீதிமன்ற மற்றும் உச்ச நீதிமன்ற முக்கியத் தீர்ப்புகளைத் தமிழில் விளக்குதல்.</li>

@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { Loader2, Upload, ArrowLeft, GripVertical, Trash2, Edit2, PlusCircle, FileText } from 'lucide-react';
+import { Loader2, Upload, ArrowLeft, GripVertical, Trash2, Edit2, PlusCircle, FileText, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -45,6 +45,38 @@ export default function EditIssuePage({ params }: { params: Promise<{ id: string
   const [pdfName, setPdfName] = useState<string | null>(null);
   const [isPdfUploading, setIsPdfUploading] = useState(false);
   const [articles, setArticles] = useState<any[]>([]);
+  const [isExtracting, setIsExtracting] = useState(false);
+
+  const handleAIExtract = async () => {
+    if (!pdfPath) {
+      alert('தயவுசெய்து முதலில் ஒரு PDF கோப்பை பதிவேற்றிவிட்டு இதை முயற்சிக்கவும்.');
+      return;
+    }
+    
+    if (!confirm('AI மூலம் கட்டுரைகளைப் பிரித்தெடுக்க விரும்புகிறீர்களா? இது ஏற்கனவே உள்ள கட்டுரைகளை நீக்கிவிட்டு புதிதாக உருவாக்கும்.')) {
+      return;
+    }
+    
+    setIsExtracting(true);
+    try {
+      const res = await fetch(`/api/admin/issues/${resolvedParams.id}/extract-articles`, {
+        method: 'POST'
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`வெற்றிகரமாக ${data.count} கட்டுரைகள் பிரித்தெடுக்கப்பட்டன!`);
+        // Refresh articles list
+        const articlesRes = await fetch(`/api/admin/issues/${resolvedParams.id}/content`);
+        if (articlesRes.ok) setArticles(await articlesRes.json());
+      } else {
+        alert(data.error || 'பிரித்தெடுப்பதில் பிழை ஏற்பட்டது.');
+      }
+    } catch (err: any) {
+      alert('பிழை: ' + err.message);
+    } finally {
+      setIsExtracting(false);
+    }
+  };
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm({
     defaultValues: {
@@ -319,9 +351,19 @@ export default function EditIssuePage({ params }: { params: Promise<{ id: string
             கட்டுரைகள் (Articles)
             <span className="bg-primary text-primary-foreground text-sm px-2 py-0.5 rounded-full">{articles.length}</span>
           </h2>
-          <button className="text-sm bg-accent text-accent-foreground px-4 py-2 rounded-md font-medium flex items-center gap-2 hover:bg-muted">
-            <PlusCircle className="h-4 w-4" /> கட்டுரை சேர்
-          </button>
+          <div className="flex gap-3">
+            <button 
+              type="button"
+              onClick={handleAIExtract}
+              disabled={isExtracting}
+              className="text-sm bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md font-medium flex items-center gap-2 disabled:opacity-50 transition-colors"
+            >
+              {isExtracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} AI வழி பிரித்தெடுத்தல்
+            </button>
+            <button type="button" className="text-sm bg-accent text-accent-foreground px-4 py-2 rounded-md font-medium flex items-center gap-2 hover:bg-muted">
+              <PlusCircle className="h-4 w-4" /> கட்டுரை சேர்
+            </button>
+          </div>
         </div>
 
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
