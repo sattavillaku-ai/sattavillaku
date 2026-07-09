@@ -141,68 +141,101 @@ Your tasks:
 3. For each separate item, extract the title, author name (or "ஆசிரியர் குழு" if unknown), content type (one of: 'article', 'poem', 'editorial', 'story', 'interview'), and its text body (as "plain_text").
 Return the output strictly in the requested JSON structure.`;
 
-    const payload = {
-      contents: [
-        {
+    // Split text into 15k chunks with 1k overlap to bypass token and context limits
+    const chunkSize = 15000;
+    const overlap = 1000;
+    const chunks: string[] = [];
+    
+    let chunkIndex = 0;
+    while (chunkIndex < pdfText.length) {
+      const start = Math.max(0, chunkIndex - overlap);
+      const end = Math.min(pdfText.length, chunkIndex + chunkSize);
+      chunks.push(pdfText.substring(start, end));
+      if (end >= pdfText.length) break;
+      chunkIndex += chunkSize;
+    }
+
+    const promises = chunks.map(async (chunk, idx) => {
+      const payload = {
+        contents: [
+          {
+            parts: [
+              {
+                text: `Here is a portion of the raw garbled text from the magazine PDF:\n\n${chunk}\n\nPlease decode this Tamil text and extract any articles you find.`
+              }
+            ]
+          }
+        ],
+        systemInstruction: {
           parts: [
             {
-              text: `Here is the raw text from the magazine:\n\n${pdfText}\n\nPlease identify all the articles and format them.`
+              text: systemPrompt
             }
           ]
-        }
-      ],
-      systemInstruction: {
-        parts: [
-          {
-            text: systemPrompt
-          }
-        ]
-      },
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "ARRAY",
-          items: {
-            type: "OBJECT",
-            properties: {
-              title: { type: "STRING" },
-              author_name: { type: "STRING" },
-              content_type: { 
-                type: "STRING", 
-                enum: ["article", "poem", "editorial", "story", "interview"] 
+        },
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                title: { type: "STRING" },
+                author_name: { type: "STRING" },
+                content_type: { 
+                  type: "STRING", 
+                  enum: ["article", "poem", "editorial", "story", "interview"] 
+                },
+                plain_text: { type: "STRING" }
               },
-              plain_text: { type: "STRING" }
-            },
-            required: ["title", "author_name", "content_type", "plain_text"]
+              required: ["title", "author_name", "content_type", "plain_text"]
+            }
+          }
+        }
+      };
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Chunk ${idx + 1} Error: ` + (errorData.error?.message || 'Gemini API Error'));
+      }
+
+      const result = await response.json();
+      const textResponse = result.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (textResponse) {
+        return JSON.parse(textResponse);
+      }
+      return [];
+    });
+
+    const results = await Promise.all(promises);
+
+    // Combine and deduplicate extracted articles by title
+    const extractedArticles: any[] = [];
+    const seenTitles = new Set<string>();
+    
+    for (const list of results) {
+      if (Array.isArray(list)) {
+        for (const art of list) {
+          const cleanTitle = art.title?.trim().toLowerCase();
+          if (cleanTitle && !seenTitles.has(cleanTitle) && art.plain_text?.trim().length > 50) {
+            seenTitles.add(cleanTitle);
+            extractedArticles.push(art);
           }
         }
       }
-    };
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'Gemini API Error');
     }
 
-    const result = await response.json();
-    const textResponse = result.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (!textResponse) {
-      return NextResponse.json({ error: 'AI இலிருந்து எந்த பதிலும் கிடைக்கவில்லை.' }, { status: 500 });
-    }
-
-    const extractedArticles = JSON.parse(textResponse);
-
-    if (!Array.isArray(extractedArticles) || extractedArticles.length === 0) {
-      return NextResponse.json({ error: 'AI கட்டுரைகளை அடையாளம் காணவில்லை.' }, { status: 500 });
+    if (extractedArticles.length === 0) {
+      return NextResponse.json({ error: 'AI கட்டுரைகளை அடையாளம் காணவில்லை.' }, { status: 400 });
     }
 
     // 5. Delete existing content & Save newly extracted articles
