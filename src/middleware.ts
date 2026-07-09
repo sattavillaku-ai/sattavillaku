@@ -110,24 +110,8 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(url);
     }
     
-    // Check if user is actually admin
-    const { data: user } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', session.id)
-      .single();
-      
-    if (user?.role !== 'admin') {
-      console.warn(`[Security] Unauthorized admin access attempt by user: ${session.id}`);
-      if (url.pathname.startsWith('/api/')) {
-        return new NextResponse(JSON.stringify({ error: 'Forbidden', message: 'நிர்வாகிகளுக்கு மட்டுமே அனுமதி' }), {
-          status: 403,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      url.pathname = '/';
-      return NextResponse.redirect(url);
-    }
+    // Middleware enforces session presence for /admin and /api/admin.
+    // The specific 'admin' role check is performed securely by the layouts and API route handlers themselves to avoid redundant DB roundtrips.
   }
 
   return res;

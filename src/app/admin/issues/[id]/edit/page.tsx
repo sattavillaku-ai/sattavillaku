@@ -60,7 +60,9 @@ export default function EditIssuePage({ params }: { params: Promise<{ id: string
     setIsExtracting(true);
     try {
       const res = await fetch(`/api/admin/issues/${resolvedParams.id}/extract-articles`, {
-        method: 'POST'
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdf_path: pdfPath })
       });
       const data = await res.json();
       if (res.ok) {

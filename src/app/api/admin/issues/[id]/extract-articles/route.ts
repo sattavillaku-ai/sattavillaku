@@ -2,6 +2,21 @@ import { createServerClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 const { PDFParse } = require('pdf-parse');
 
+function getRelativeStoragePath(urlOrPath: string) {
+  if (!urlOrPath) return '';
+  if (urlOrPath.startsWith('http://') || urlOrPath.startsWith('https://')) {
+    // If it's a cover image from magazine-assets, flag it
+    if (urlOrPath.includes('/magazine-assets/')) {
+      return 'ERROR:COVER_IMAGE';
+    }
+    const parts = urlOrPath.split('/premium-pdfs/');
+    if (parts.length > 1) {
+      return decodeURIComponent(parts[1]);
+    }
+  }
+  return urlOrPath;
+}
+
 function textToTiptap(text: string) {
   const paragraphs = text
     .split('\n')
@@ -45,6 +60,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const { data: user } = await supabase.from('users').select('role').eq('id', session.user.id).single();
     if (user?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
+    // Read request body to get dynamic pdf_path
+    let pdfPath = '';
+    try {
+      const body = await req.json();
+      pdfPath = body.pdf_path || '';
+    } catch (e) {}
+
     // 1. Fetch Issue
     const { data: issue, error: issueError } = await supabase
       .from('issues')
@@ -56,7 +78,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ error: 'இதழ் கிடைக்கவில்லை (Issue not found)' }, { status: 404 });
     }
 
-    if (!issue.pdf_url) {
+    const pathToCheck = pdfPath || issue.pdf_url || '';
+    const finalPdfPath = getRelativeStoragePath(pathToCheck);
+
+    if (finalPdfPath === 'ERROR:COVER_IMAGE') {
+      return NextResponse.json({ 
+        error: 'தேர்ந்தெடுக்கப்பட்ட கோப்பு ஒரு அட்டைப்படம் (Cover Image) ஆகும். தயவுசெய்து இதழ் PDF கோப்பை பதிவேற்றிவிட்டு முயற்சிக்கவும்.' 
+      }, { status: 400 });
+    }
+
+    if (!finalPdfPath) {
       return NextResponse.json({ 
         error: 'இதழின் PDF கோப்பு இன்னும் பதிவேற்றப்படவில்லை. தயவுசெய்து முதலில் PDF ஐப் பதிவேற்றவும்.' 
       }, { status: 400 });
@@ -65,7 +96,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     // 2. Download PDF file from Supabase Storage
     const { data: fileData, error: downloadError } = await supabase.storage
       .from('premium-pdfs')
-      .download(issue.pdf_url);
+      .download(finalPdfPath);
 
     if (downloadError || !fileData) {
       return NextResponse.json({ 
