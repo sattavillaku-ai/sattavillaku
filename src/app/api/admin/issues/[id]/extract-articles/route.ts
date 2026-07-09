@@ -1,6 +1,6 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-const pdfParse = require('pdf-parse');
+const pdfParse = require('pdf-parse/lib/pdf-parse.js');
 
 function getRelativeStoragePath(urlOrPath: string) {
   if (!urlOrPath) return '';
