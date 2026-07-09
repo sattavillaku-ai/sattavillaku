@@ -1,6 +1,6 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-const pdfParse = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 
 function textToTiptap(text: string) {
   const paragraphs = text
@@ -77,8 +77,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const buffer = Buffer.from(await fileData.arrayBuffer());
     let pdfText = '';
     try {
-      const parsedPdf = await pdfParse(buffer);
+      const parser = new PDFParse({ data: buffer });
+      const parsedPdf = await parser.getText();
       pdfText = parsedPdf.text;
+      await parser.destroy();
     } catch (parseError: any) {
       return NextResponse.json({ 
         error: 'PDF கோப்பை வாசிப்பதில் பிழை (PDF Parse Error): ' + parseError.message 
