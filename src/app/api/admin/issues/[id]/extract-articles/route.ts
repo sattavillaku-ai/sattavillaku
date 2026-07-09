@@ -79,7 +79,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     const pathToCheck = pdfPath || issue.pdf_url || '';
-    const finalPdfPath = getRelativeStoragePath(pathToCheck);
+    const resolvedPath = pathToCheck.includes('|') ? pathToCheck.split('|')[0] : pathToCheck;
+    const finalPdfPath = getRelativeStoragePath(resolvedPath);
 
     if (finalPdfPath === 'ERROR:COVER_IMAGE') {
       return NextResponse.json({ 

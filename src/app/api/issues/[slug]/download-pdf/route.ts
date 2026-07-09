@@ -60,9 +60,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
 
     // 3. சைய்ன் செய்யப்பட்ட URL உருவாக்கவும் (Signed URL) using Admin Client
     const adminSupabase = createAdminClient();
+    const targetPdfPath = issue.pdf_url.includes('|') 
+      ? issue.pdf_url.split('|')[1] 
+      : issue.pdf_url;
+
     const { data: signedData, error: signError } = await adminSupabase.storage
       .from('premium-pdfs')
-      .createSignedUrl(issue.pdf_url, 7200); // 2 மணிநேரம்
+      .createSignedUrl(targetPdfPath, 7200); // 2 மணிநேரம்
 
     if (signError) throw signError;
 

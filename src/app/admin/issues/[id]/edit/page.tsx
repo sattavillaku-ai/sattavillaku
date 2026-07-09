@@ -104,6 +104,7 @@ export default function EditIssuePage({ params }: { params: Promise<{ id: string
   const [isPdfUploading, setIsPdfUploading] = useState(false);
   const [articles, setArticles] = useState<any[]>([]);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [fullPdfUrl, setFullPdfUrl] = useState<string | null>(null);
 
   // Article Modal & Editor States
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -246,9 +247,15 @@ export default function EditIssuePage({ params }: { params: Promise<{ id: string
         const data = await res.json();
         reset(data);
         setCoverImage(data.cover_image_url);
-        setPdfPath(data.pdf_url);
-        if (data.pdf_url) {
-          const parts = data.pdf_url.split('/');
+        setFullPdfUrl(data.pdf_url);
+        
+        const rawPdfPath = data.pdf_url && data.pdf_url.includes('|') 
+          ? data.pdf_url.split('|')[0] 
+          : data.pdf_url;
+          
+        setPdfPath(rawPdfPath);
+        if (rawPdfPath) {
+          const parts = rawPdfPath.split('/');
           setPdfName(parts[parts.length - 1]);
         }
       }
@@ -330,7 +337,14 @@ export default function EditIssuePage({ params }: { params: Promise<{ id: string
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      const payload = { ...data, cover_image_url: coverImage, pdf_url: pdfPath };
+      let finalPdfUrl = pdfPath;
+      if (fullPdfUrl && fullPdfUrl.includes('|')) {
+        const [raw, gen] = fullPdfUrl.split('|');
+        if (pdfPath === raw) {
+          finalPdfUrl = `${raw}|${gen}`;
+        }
+      }
+      const payload = { ...data, cover_image_url: coverImage, pdf_url: finalPdfUrl };
       const res = await fetch(`/api/admin/issues/${resolvedParams.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

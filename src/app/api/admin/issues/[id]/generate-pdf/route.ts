@@ -109,10 +109,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (uploadError) throw uploadError;
 
     // 5. டேட்டாபேஸில் தகவலைப் புதுப்பிக்கவும்
+    const rawPdfPath = issue.pdf_url && issue.pdf_url.includes('|')
+      ? issue.pdf_url.split('|')[0]
+      : issue.pdf_url;
+      
+    const finalPdfUrlValue = rawPdfPath ? `${rawPdfPath}|${storagePath}` : storagePath;
+
     const { error: updateError } = await supabase
       .from('issues')
       .update({
-        pdf_url: storagePath,
+        pdf_url: finalPdfUrlValue,
         pdf_generated_at: new Date().toISOString()
       })
       .eq('id', issue.id);
