@@ -2,7 +2,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { BookOpen, PlusCircle, Users, IndianRupee, LayoutDashboard } from 'lucide-react';
+import { BookOpen, PlusCircle, Users, IndianRupee, LayoutDashboard, Globe } from 'lucide-react';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = createServerClient();
@@ -59,12 +59,26 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </Link>
           ))}
         </nav>
+
+        {/* Go to Website link */}
+        <div className="p-4 border-t bg-muted/10 mt-auto">
+          <Link
+            href="/"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-primary hover:bg-primary/5 transition-colors border border-primary/20"
+          >
+            <Globe className="h-5 w-5" />
+            இணையதளம் (Go to Website)
+          </Link>
+        </div>
       </aside>
 
       {/* முதன்மை பகுதி (Main Content) */}
       <main className="flex-1 flex flex-col">
-        <header className="h-16 border-b bg-background flex items-center px-6 md:hidden">
+        <header className="h-16 border-b bg-background flex items-center justify-between px-6 md:hidden">
            <div className="font-serif font-bold text-lg text-primary">சட்டவிளக்கு ஆசிரியர் பலகை</div>
+           <Link href="/" className="text-xs font-semibold text-primary border border-primary/20 px-3 py-1.5 rounded-lg bg-primary/5">
+             இணையதளம்
+           </Link>
         </header>
         <div className="p-6 md:p-8 overflow-auto flex-1">
           {children}
