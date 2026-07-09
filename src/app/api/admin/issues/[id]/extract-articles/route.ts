@@ -132,8 +132,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
 
-    const systemPrompt = `You are a professional Tamil magazine editor. Analyze the provided text from a Tamil magazine issue PDF. Identify separate articles, editorials, poems, stories, and interviews.
-For each separate item, extract the title, author name (or "ஆசிரியர் குழு" if unknown), content type (one of: 'article', 'poem', 'editorial', 'story', 'interview'), and its text body.
+    const systemPrompt = `You are a professional Tamil magazine editor and Tamil font decoding expert.
+The input text extracted from the PDF is in a non-Unicode Tamil font encoding (likely Vanavil, TSCII, TAB, or TAM encoding), resulting in garbled Latin/special characters (e.g. "ñô ̃" means "மலர்", "Þî›" means "இதழ்", "ãŠó™" means "ஏப்ரல்", "ê†ì M÷‚°" means "சட்டவிளக்கு", "Ü„ê‹" means "அச்சம்").
+
+Your tasks:
+1. Decode the garbled text into correct Tamil Unicode (clean readable Tamil).
+2. Identify separate articles, editorials, poems, stories, and interviews from the decoded Tamil text.
+3. For each separate item, extract the title, author name (or "ஆசிரியர் குழு" if unknown), content type (one of: 'article', 'poem', 'editorial', 'story', 'interview'), and its text body (as "plain_text").
 Return the output strictly in the requested JSON structure.`;
 
     const payload = {
