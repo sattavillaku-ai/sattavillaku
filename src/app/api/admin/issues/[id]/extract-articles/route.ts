@@ -1,6 +1,6 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-const { PDFParse } = require('pdf-parse');
+const pdfParse = require('pdf-parse');
 
 function getRelativeStoragePath(urlOrPath: string) {
   if (!urlOrPath) return '';
@@ -108,10 +108,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const buffer = Buffer.from(await fileData.arrayBuffer());
     let pdfText = '';
     try {
-      const parser = new PDFParse({ data: buffer });
-      const parsedPdf = await parser.getText();
+      const parsedPdf = await pdfParse(buffer);
       pdfText = parsedPdf.text;
-      await parser.destroy();
     } catch (parseError: any) {
       return NextResponse.json({ 
         error: 'PDF கோப்பை வாசிப்பதில் பிழை (PDF Parse Error): ' + parseError.message 
