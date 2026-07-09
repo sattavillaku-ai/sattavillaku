@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { Loader2, Upload, ArrowLeft, GripVertical, Trash2, Edit2, PlusCircle, FileText, Sparkles, X } from 'lucide-react';
+import { Loader2, Upload, ArrowLeft, GripVertical, Trash2, Edit2, PlusCircle, FileText, Sparkles, X, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -48,6 +48,7 @@ function tiptapToText(content: any): string {
   if (content.type === 'doc' && Array.isArray(content.content)) {
     return content.content
       .map((node: any) => {
+        if (node.type === 'image') return '';
         if (node.content && Array.isArray(node.content)) {
           const text = node.content.map((c: any) => c.text || '').join('');
           if (node.type === 'heading') {
@@ -63,34 +64,61 @@ function tiptapToText(content: any): string {
   return '';
 }
 
-function textToTiptap(text: string) {
+function extractImageFromTiptap(content: any): string | null {
+  if (!content) return null;
+  if (typeof content === 'string') {
+    try {
+      content = JSON.parse(content);
+    } catch (e) {
+      return null;
+    }
+  }
+  if (content.type === 'doc' && Array.isArray(content.content)) {
+    const imageNode = content.content.find((node: any) => node.type === 'image');
+    return imageNode?.attrs?.src || null;
+  }
+  return null;
+}
+
+function textToTiptap(text: string, imageUrl?: string | null) {
   const paragraphs = text
     .split('\n')
     .map(p => p.trim())
     .filter(p => p.length > 0);
     
-  return {
-    type: "doc",
-    content: paragraphs.map(p => {
-      if (p.startsWith('###')) {
-        return {
-          type: "heading",
-          attrs: { level: 3 },
-          content: [{ type: "text", text: p.replace(/^###\s*/, '') }]
-        };
-      }
-      if (p.startsWith('##')) {
-        return {
-          type: "heading",
-          attrs: { level: 2 },
-          content: [{ type: "text", text: p.replace(/^##\s*/, '') }]
-        };
-      }
-      return {
+  const contentList: any[] = [];
+  
+  if (imageUrl) {
+    contentList.push({
+      type: "image",
+      attrs: { src: imageUrl }
+    });
+  }
+  
+  paragraphs.forEach(p => {
+    if (p.startsWith('###')) {
+      contentList.push({
+        type: "heading",
+        attrs: { level: 3 },
+        content: [{ type: "text", text: p.replace(/^###\s*/, '') }]
+      });
+    } else if (p.startsWith('##')) {
+      contentList.push({
+        type: "heading",
+        attrs: { level: 2 },
+        content: [{ type: "text", text: p.replace(/^##\s*/, '') }]
+      });
+    } else {
+      contentList.push({
         type: "paragraph",
         content: [{ type: "text", text: p }]
-      };
-    })
+      });
+    }
+  });
+    
+  return {
+    type: "doc",
+    content: contentList
   };
 }
 
@@ -115,6 +143,8 @@ export default function EditIssuePage({ params }: { params: Promise<{ id: string
   const [modalIsPreview, setModalIsPreview] = useState(false);
   const [modalPlainContent, setModalPlainContent] = useState('');
   const [isSavingArticle, setIsSavingArticle] = useState(false);
+  const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
+  const [isArticleImageUploading, setIsArticleImageUploading] = useState(false);
 
   const openAddModal = () => {
     setEditingArticle(null);
@@ -123,6 +153,7 @@ export default function EditIssuePage({ params }: { params: Promise<{ id: string
     setModalContentType('article');
     setModalIsPreview(false);
     setModalPlainContent('');
+    setModalImageUrl(null);
     setIsModalOpen(true);
   };
 
@@ -133,7 +164,39 @@ export default function EditIssuePage({ params }: { params: Promise<{ id: string
     setModalContentType(article.content_type || 'article');
     setModalIsPreview(article.is_preview || false);
     setModalPlainContent(tiptapToText(article.content));
+    setModalImageUrl(extractImageFromTiptap(article.content));
     setIsModalOpen(true);
+  };
+
+  const handleArticleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsArticleImageUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
+      const filePath = `uploads/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('magazine-assets')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('magazine-assets')
+        .getPublicUrl(filePath);
+
+      setModalImageUrl(publicUrl);
+    } catch (error: any) {
+      alert('படம் பதிவேற்றுவதில் பிழை: ' + error.message);
+    } finally {
+      setIsArticleImageUploading(false);
+    }
   };
 
   const handleSaveArticle = async () => {
@@ -144,7 +207,7 @@ export default function EditIssuePage({ params }: { params: Promise<{ id: string
         author_name: modalAuthorName || 'ஆசிரியர் குழு',
         content_type: modalContentType,
         is_preview: modalIsPreview,
-        content: textToTiptap(modalPlainContent),
+        content: textToTiptap(modalPlainContent, modalImageUrl),
       };
 
       let res;
@@ -625,6 +688,39 @@ export default function EditIssuePage({ params }: { params: Promise<{ id: string
                 <label htmlFor="modal_is_preview" className="font-medium cursor-pointer text-sm">
                   இலவச முன்னோட்டம்? (Is Free Preview?)
                 </label>
+              </div>
+
+              {/* Image Upload for Article */}
+              <div>
+                <label className="block text-sm font-medium mb-1">கட்டுரை படம் (Article Featured Image)</label>
+                <div className="border border-dashed rounded-lg p-4 text-center hover:bg-accent/50 transition-colors relative bg-muted/10">
+                  <input 
+                    type="file" 
+                    id="article_image_input" 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={handleArticleImageUpload} 
+                    disabled={isArticleImageUploading}
+                  />
+                  <label htmlFor="article_image_input" className="cursor-pointer flex flex-col items-center gap-2">
+                    {isArticleImageUploading ? (
+                      <>
+                        <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                        <span className="text-xs text-muted-foreground">பதிவேற்றப்படுகிறது...</span>
+                      </>
+                    ) : modalImageUrl ? (
+                      <>
+                        <img src={modalImageUrl} alt="Article preview" className="h-28 object-cover rounded shadow mx-auto" />
+                        <span className="text-xs text-muted-foreground">(படத்தை மாற்ற கிளிக் செய்யவும்)</span>
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">படத்தை பதிவேற்றவும் (Upload Article Image)</span>
+                      </>
+                    )}
+                  </label>
+                </div>
               </div>
 
               <div>
