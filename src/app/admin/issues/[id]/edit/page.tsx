@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { Loader2, Upload, ArrowLeft, GripVertical, Trash2, Edit2, PlusCircle, FileText, Sparkles } from 'lucide-react';
+import { Loader2, Upload, ArrowLeft, GripVertical, Trash2, Edit2, PlusCircle, FileText, Sparkles, X } from 'lucide-react';
 import Link from 'next/link';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -36,6 +36,64 @@ function SortableArticle({ article, onEdit, onDelete }: any) {
   );
 }
 
+function tiptapToText(content: any): string {
+  if (!content) return '';
+  if (typeof content === 'string') {
+    try {
+      content = JSON.parse(content);
+    } catch (e) {
+      return content;
+    }
+  }
+  if (content.type === 'doc' && Array.isArray(content.content)) {
+    return content.content
+      .map((node: any) => {
+        if (node.content && Array.isArray(node.content)) {
+          const text = node.content.map((c: any) => c.text || '').join('');
+          if (node.type === 'heading') {
+            return `${'#'.repeat(node.attrs?.level || 2)} ${text}`;
+          }
+          return text;
+        }
+        return '';
+      })
+      .filter((text: string) => text.length > 0)
+      .join('\n\n');
+  }
+  return '';
+}
+
+function textToTiptap(text: string) {
+  const paragraphs = text
+    .split('\n')
+    .map(p => p.trim())
+    .filter(p => p.length > 0);
+    
+  return {
+    type: "doc",
+    content: paragraphs.map(p => {
+      if (p.startsWith('###')) {
+        return {
+          type: "heading",
+          attrs: { level: 3 },
+          content: [{ type: "text", text: p.replace(/^###\s*/, '') }]
+        };
+      }
+      if (p.startsWith('##')) {
+        return {
+          type: "heading",
+          attrs: { level: 2 },
+          content: [{ type: "text", text: p.replace(/^##\s*/, '') }]
+        };
+      }
+      return {
+        type: "paragraph",
+        content: [{ type: "text", text: p }]
+      };
+    })
+  };
+}
+
 export default function EditIssuePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
@@ -46,6 +104,94 @@ export default function EditIssuePage({ params }: { params: Promise<{ id: string
   const [isPdfUploading, setIsPdfUploading] = useState(false);
   const [articles, setArticles] = useState<any[]>([]);
   const [isExtracting, setIsExtracting] = useState(false);
+
+  // Article Modal & Editor States
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingArticle, setEditingArticle] = useState<any | null>(null);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalAuthorName, setModalAuthorName] = useState('');
+  const [modalContentType, setModalContentType] = useState('article');
+  const [modalIsPreview, setModalIsPreview] = useState(false);
+  const [modalPlainContent, setModalPlainContent] = useState('');
+  const [isSavingArticle, setIsSavingArticle] = useState(false);
+
+  const openAddModal = () => {
+    setEditingArticle(null);
+    setModalTitle('');
+    setModalAuthorName('ஆசிரியர் குழு');
+    setModalContentType('article');
+    setModalIsPreview(false);
+    setModalPlainContent('');
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (article: any) => {
+    setEditingArticle(article);
+    setModalTitle(article.title || '');
+    setModalAuthorName(article.author_name || 'ஆசிரியர் குழு');
+    setModalContentType(article.content_type || 'article');
+    setModalIsPreview(article.is_preview || false);
+    setModalPlainContent(tiptapToText(article.content));
+    setIsModalOpen(true);
+  };
+
+  const handleSaveArticle = async () => {
+    setIsSavingArticle(true);
+    try {
+      const payload = {
+        title: modalTitle,
+        author_name: modalAuthorName || 'ஆசிரியர் குழு',
+        content_type: modalContentType,
+        is_preview: modalIsPreview,
+        content: textToTiptap(modalPlainContent),
+      };
+
+      let res;
+      if (editingArticle) {
+        res = await fetch(`/api/admin/issues/${resolvedParams.id}/content`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: editingArticle.id, ...payload })
+        });
+      } else {
+        res = await fetch(`/api/admin/issues/${resolvedParams.id}/content`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+
+      if (res.ok) {
+        setIsModalOpen(false);
+        const articlesRes = await fetch(`/api/admin/issues/${resolvedParams.id}/content`);
+        if (articlesRes.ok) setArticles(await articlesRes.json());
+      } else {
+        const error = await res.json();
+        alert(error.error || 'கட்டுரையை சேமிப்பதில் பிழை.');
+      }
+    } catch (err: any) {
+      alert('பிழை: ' + err.message);
+    } finally {
+      setIsSavingArticle(false);
+    }
+  };
+
+  const handleDeleteArticle = async (articleId: string) => {
+    if (!confirm('இந்த கட்டுரையை நீக்க விரும்புகிறீர்களா?')) return;
+    try {
+      const res = await fetch(`/api/admin/issues/${resolvedParams.id}/content?article_id=${articleId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        setArticles(articles.filter(a => a.id !== articleId));
+      } else {
+        const error = await res.json();
+        alert(error.error || 'கட்டுரையை நீக்குவதில் பிழை.');
+      }
+    } catch (err: any) {
+      alert('பிழை: ' + err.message);
+    }
+  };
 
   const handleAIExtract = async () => {
     if (!pdfPath) {
@@ -213,13 +359,29 @@ export default function EditIssuePage({ params }: { params: Promise<{ id: string
   const handleDragEnd = async (event: any) => {
     const { active, over } = event;
     if (active.id !== over.id) {
-      setArticles((items) => {
-        const oldIndex = items.findIndex((i) => i.id === active.id);
-        const newIndex = items.findIndex((i) => i.id === over.id);
-        const newArticles = arrayMove(items, oldIndex, newIndex);
-        // Call API to update positions here...
-        return newArticles;
-      });
+      const oldIndex = articles.findIndex((i) => i.id === active.id);
+      const newIndex = articles.findIndex((i) => i.id === over.id);
+      const newArticles = arrayMove(articles, oldIndex, newIndex);
+      
+      setArticles(newArticles);
+      
+      const reorderedPayload = newArticles.map((art, idx) => ({
+        id: art.id,
+        position: idx + 1
+      }));
+      
+      try {
+        const res = await fetch(`/api/admin/issues/${resolvedParams.id}/content`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(reorderedPayload)
+        });
+        if (!res.ok) throw new Error('வரிசையை சேமிக்க முடியவில்லை.');
+      } catch (err: any) {
+        alert('பிழை: ' + err.message);
+        const rollbackRes = await fetch(`/api/admin/issues/${resolvedParams.id}/content`);
+        if (rollbackRes.ok) setArticles(await rollbackRes.json());
+      }
     }
   };
 
@@ -362,7 +524,11 @@ export default function EditIssuePage({ params }: { params: Promise<{ id: string
             >
               {isExtracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} AI வழி பிரித்தெடுத்தல்
             </button>
-            <button type="button" className="text-sm bg-accent text-accent-foreground px-4 py-2 rounded-md font-medium flex items-center gap-2 hover:bg-muted">
+            <button 
+              type="button" 
+              onClick={openAddModal}
+              className="text-sm bg-accent text-accent-foreground px-4 py-2 rounded-md font-medium flex items-center gap-2 hover:bg-muted"
+            >
               <PlusCircle className="h-4 w-4" /> கட்டுரை சேர்
             </button>
           </div>
@@ -372,12 +538,112 @@ export default function EditIssuePage({ params }: { params: Promise<{ id: string
           <SortableContext items={articles} strategy={verticalListSortingStrategy}>
             <div className="space-y-3">
               {articles.map((article) => (
-                <SortableArticle key={article.id} article={article} onEdit={() => {}} onDelete={() => {}} />
+                <SortableArticle key={article.id} article={article} onEdit={openEditModal} onDelete={handleDeleteArticle} />
               ))}
             </div>
           </SortableContext>
         </DndContext>
       </div>
+
+      {/* Article Edit/Add Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-card border w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between p-6 border-b bg-muted/20">
+              <h3 className="text-xl font-bold font-serif">
+                {editingArticle ? 'கட்டுரையை திருத்து (Edit Article)' : 'புதிய கட்டுரை சேர் (Add New Article)'}
+              </h3>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="p-1 hover:bg-accent rounded-full text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+              <div>
+                <label className="block text-sm font-medium mb-1">கட்டுரை தலைப்பு (Article Title)</label>
+                <input 
+                  type="text" 
+                  value={modalTitle}
+                  onChange={(e) => setModalTitle(e.target.value)}
+                  className="w-full p-2.5 rounded-md border bg-background font-serif text-base"
+                  placeholder="கட்டுரையின் தலைப்பை தட்டச்சு செய்யவும்..."
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">ஆசிரியர் பெயர் (Author Name)</label>
+                  <input 
+                    type="text" 
+                    value={modalAuthorName}
+                    onChange={(e) => setModalAuthorName(e.target.value)}
+                    className="w-full p-2.5 rounded-md border bg-background"
+                    placeholder="ஆசிரியர் பெயர்..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">வகை (Type)</label>
+                  <select 
+                    value={modalContentType}
+                    onChange={(e) => setModalContentType(e.target.value)}
+                    className="w-full p-2.5 rounded-md border bg-background"
+                  >
+                    <option value="article">கட்டுரை (Article)</option>
+                    <option value="poem">கவிதை (Poem)</option>
+                    <option value="editorial">தலையங்கம் (Editorial)</option>
+                    <option value="story">கதை (Story)</option>
+                    <option value="interview">நேர்காணல் (Interview)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/20">
+                <input 
+                  type="checkbox" 
+                  id="modal_is_preview" 
+                  checked={modalIsPreview}
+                  onChange={(e) => setModalIsPreview(e.target.checked)}
+                  className="h-5 w-5 rounded border-gray-300"
+                />
+                <label htmlFor="modal_is_preview" className="font-medium cursor-pointer text-sm">
+                  இலவச முன்னோட்டம்? (Is Free Preview?)
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">உள்ளடக்கம் (Content)</label>
+                <textarea 
+                  value={modalPlainContent}
+                  onChange={(e) => setModalPlainContent(e.target.value)}
+                  rows={12}
+                  className="w-full p-3 rounded-md border bg-background font-serif text-base leading-relaxed"
+                  placeholder="கட்டுரையின் உள்ளடக்கத்தை தட்டச்சு செய்யவும். பத்திகளை பிரிக்க Enter அழுத்தவும். தலைப்புகளுக்கு ## பயன்படுத்தவும்."
+                />
+              </div>
+            </div>
+
+            <div className="p-6 border-t bg-muted/20 flex justify-end gap-3">
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 border rounded-md font-medium text-sm hover:bg-accent transition-colors"
+              >
+                ரத்துசெய் (Cancel)
+              </button>
+              <button 
+                onClick={handleSaveArticle}
+                disabled={isSavingArticle || !modalTitle.trim()}
+                className="px-5 py-2 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 rounded-md font-semibold text-sm flex items-center gap-2 transition-colors"
+              >
+                {isSavingArticle && <Loader2 className="h-4 w-4 animate-spin" />}
+                சேமி (Save)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

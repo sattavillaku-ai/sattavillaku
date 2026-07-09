@@ -68,10 +68,27 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const body = await req.json();
     
+    // Bulk reordering
+    if (Array.isArray(body)) {
+      for (const item of body) {
+        if (item.id && typeof item.position === 'number') {
+          await supabase
+            .from('issue_content')
+            .update({ position: item.position })
+            .eq('id', item.id);
+        }
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    // Individual article update
+    const { id, ...updateData } = body;
+    const targetId = id || resolvedParams.id;
+    
     const { data, error } = await supabase
       .from('issue_content')
-      .update(body)
-      .eq('id', resolvedParams.id)
+      .update(updateData)
+      .eq('id', targetId)
       .select()
       .single();
       
@@ -93,7 +110,15 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     const { data: user } = await supabase.from('users').select('role').eq('id', session.user.id).single();
     if (user?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-    const { error } = await supabase.from('issue_content').delete().eq('id', resolvedParams.id);
+    const { searchParams } = new URL(req.url);
+    const articleId = searchParams.get('article_id');
+    const targetId = articleId || resolvedParams.id;
+
+    const { error } = await supabase
+      .from('issue_content')
+      .delete()
+      .eq('id', targetId);
+      
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ success: true });
   } catch (error: any) {
