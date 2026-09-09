@@ -1,19 +1,21 @@
 import { supabase } from './supabase';
 
+// ONLY these two email addresses are permitted to access the admin portal
+export const EXCLUSIVE_ADMIN_EMAILS = [
+  'cfilayaraja@gmail.com',
+  'sattavilakku@gmail.com',
+];
+
 export function isAuthorizedAdminEmail(email?: string | null): boolean {
   if (!email) return false;
-  const configured =
-    process.env.NEXT_PUBLIC_ADMIN_EMAILS ||
-    'fun2trade089@gmail.com,editor@sattavilakku.com,admin@sattavilakku.com';
-  const allowed = configured.split(',').map((e) => e.trim().toLowerCase());
-  const normalized = email.toLowerCase();
 
-  // Allowed if exact match in whitelist or official publication domain
-  return (
-    allowed.includes(normalized) ||
-    normalized.endsWith('@sattavilakku.com') ||
-    allowed.length === 0
-  );
+  const envConfigured = process.env.NEXT_PUBLIC_ADMIN_EMAILS;
+  const allowed = envConfigured
+    ? envConfigured.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)
+    : EXCLUSIVE_ADMIN_EMAILS;
+
+  const normalized = email.trim().toLowerCase();
+  return allowed.includes(normalized);
 }
 
 export async function getCurrentAdminUser() {
@@ -27,7 +29,10 @@ export async function getCurrentAdminUser() {
     return {
       user: session.user,
       email,
-      name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || email?.split('@')[0] || 'ஆசிரியர்',
+      name:
+        session.user.user_metadata?.full_name ||
+        session.user.user_metadata?.name ||
+        (email === 'cfilayaraja@gmail.com' ? 'இளையராஜா' : 'சட்டவிளக்கு முதன்மை ஆசிரியர்'),
       avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null,
       isAuthorized,
     };

@@ -109,11 +109,15 @@ export default function AdminLoginPage() {
         <div className="p-3.5 rounded-lg bg-muted/60 border border-border text-xs text-muted-foreground space-y-1.5">
           <div className="flex items-center gap-1.5 font-bold text-foreground">
             <ShieldAlert className="w-4 h-4 text-primary shrink-0" />
-            <span>அங்கீகரிக்கப்பட்ட ஆசிரியர் கூகிள் கணக்கு:</span>
+            <span>அங்கீகரிக்கப்பட்ட ஆசிரியர் கணக்குகள் மட்டும்:</span>
           </div>
           <p className="leading-relaxed">
-            அனுமதியளிக்கப்பட்ட நிர்வாக ஆசிரியர் கூகிள் கணக்குகள் மட்டுமே கட்டுப்பாட்டகத்தை அணுக முடியும். பிற கணக்குகள் தானாக நிராகரிக்கப்படும்.
+            கீழ்க்காணும் அனுமதிக்கப்பட்ட கூகிள் கணக்குகள் மூலம் மட்டுமே நிர்வாக கட்டுப்பாட்டகத்தை அணுக முடியும்:
           </p>
+          <div className="font-mono text-[11px] font-bold text-foreground bg-card p-2 rounded-xs border border-border/80 space-y-0.5">
+            <div>• cfilayaraja@gmail.com</div>
+            <div>• sattavilakku@gmail.com</div>
+          </div>
         </div>
 
         {error && (
