@@ -609,12 +609,12 @@ export const INITIAL_MEDIA: Media[] = [
   },
   {
     id: 'med-5',
-    name: 'sattavilakku-emblem.svg',
-    url: '/sattavilakku-emblem.svg',
+    name: 'sattavilakku-logo.jpg',
+    url: '/logo.jpg',
     type: 'image',
-    size: '48 KB',
+    size: '29 KB',
     category: 'site',
-    altText: 'சட்டவிளக்கு அதிகாரப்பூர்வ முத்திரை',
+    altText: 'சட்டவிளக்கு அதிகாரப்பூர்வ சின்னம் மற்றும் வாசகம்',
     createdAt: '2026-08-01T08:00:00Z',
   },
 ];

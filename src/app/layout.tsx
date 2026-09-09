@@ -3,6 +3,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://sattavilakku.com'),
   title: {
     default: 'சட்டவிளக்கு | SATTAVILAKKU — சட்டம், அரசியல் & சமூகம்',
     template: '%s | சட்டவிளக்கு (Sattavilakku)',
@@ -20,6 +21,11 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: 'வழக்கறிஞர் கே. எஸ். இளங்கோவன்', url: 'https://sattavilakku.com' }],
   creator: 'சட்டவிளக்கு ஆசிரியர் குழு',
+  icons: {
+    icon: '/logo.jpg',
+    shortcut: '/logo.jpg',
+    apple: '/logo.jpg',
+  },
   openGraph: {
     type: 'website',
     locale: 'ta_IN',
@@ -27,6 +33,14 @@ export const metadata: Metadata = {
     siteName: 'சட்டவிளக்கு (Sattavilakku)',
     title: 'சட்டவிளக்கு — சட்டம் & அரசியல் ஆய்விதழ்',
     description: 'நடுநிலையான, நம்பகமான தமிழ்ச் சட்ட இதழ் மற்றும் அன்றாடச் செய்திகள்.',
+    images: [
+      {
+        url: '/logo.jpg',
+        width: 1200,
+        height: 300,
+        alt: 'சட்டவிளக்கு - அச்சம் தவிர்! சட்டம் பேசு!',
+      },
+    ],
   },
 };
 
@@ -44,6 +58,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@300;400;500;600;700;800&family=Noto+Serif+Tamil:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
+        <link rel="icon" href="/logo.jpg" type="image/jpeg" />
       </head>
       <body className="min-h-full flex flex-col antialiased selection:bg-primary/20 selection:text-primary">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>

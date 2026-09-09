@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 
 interface BrandLogoProps {
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   showSubtext?: boolean;
   className?: string;
   isLink?: boolean;
@@ -14,69 +14,34 @@ export function BrandLogo({
   className = '',
   isLink = true,
 }: BrandLogoProps) {
-  const iconSizes = {
-    sm: 'w-7 h-7',
-    md: 'w-9 h-9',
-    lg: 'w-12 h-12',
-  };
-
-  const titleSizes = {
-    sm: 'text-lg',
-    md: 'text-2xl',
-    lg: 'text-3xl sm:text-4xl',
+  // Dimension classes for the official Sattavilakku logo banner
+  const heightClasses = {
+    sm: 'h-8 sm:h-9',
+    md: 'h-9 sm:h-11',
+    lg: 'h-12 sm:h-14',
+    xl: 'h-16 sm:h-20',
   };
 
   const content = (
-    <div className={`flex items-center gap-2.5 sm:gap-3 group ${className}`}>
-      {/* Law & Journalism Seal / Emblem */}
-      <div
-        className={`${iconSizes[size]} shrink-0 rounded-md bg-primary text-primary-foreground flex items-center justify-center shadow-xs border border-primary/20 transition-transform group-hover:scale-105`}
-        aria-hidden="true"
-      >
-        <svg
-          viewBox="0 0 32 32"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="w-4/5 h-4/5 text-primary-foreground"
-        >
-          {/* Base pillar */}
-          <path d="M6 26h20M9 26V23h14v3M16 23V11" />
-          {/* Scales balance bar */}
-          <path d="M8 11h16" />
-          {/* Left scale pan */}
-          <path d="M8 11l-3 6h6l-3-6z" />
-          {/* Right scale pan */}
-          <path d="M24 11l-3 6h6l-3-6z" />
-          {/* Flame of truth (விளக்கு / Lamp) */}
-          <path
-            d="M16 5c1.5 1.5 2 3.5 0 5-2-1.5-1.5-3.5 0-5z"
-            fill="currentColor"
-            stroke="none"
-          />
-        </svg>
-      </div>
-
-      <div className="flex flex-col leading-tight">
-        <span
-          className={`${titleSizes[size]} font-extrabold tracking-tight font-tamil text-foreground group-hover:text-primary transition-colors`}
-        >
-          சட்டவிளக்கு
-        </span>
-        {showSubtext && (
-          <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider uppercase text-muted-foreground">
-            SATTAVILAKKU <span className="text-primary/70">• சட்டம் & இதழியல்</span>
-          </span>
-        )}
+    <div className={`inline-flex items-center group ${className}`}>
+      <div className="relative overflow-hidden rounded-xs border border-primary/30 shadow-xs group-hover:shadow-md group-hover:border-primary transition-all duration-200 bg-[#e11d24]">
+        <img
+          src="/logo.jpg"
+          alt="சட்டவிளக்கு (Sattavilakku) - அச்சம் தவிர்! சட்டம் பேசு!"
+          className={`${heightClasses[size]} w-auto object-contain block group-hover:scale-102 transition-transform duration-200`}
+          loading="eager"
+        />
       </div>
     </div>
   );
 
   if (isLink) {
     return (
-      <Link href="/" className="inline-block focus:outline-none focus:ring-2 focus:ring-primary rounded-md">
+      <Link
+        href="/"
+        className="inline-block focus:outline-none focus:ring-2 focus:ring-primary rounded-xs transition-opacity hover:opacity-95"
+        title="சட்டவிளக்கு - முகப்பு"
+      >
         {content}
       </Link>
     );
