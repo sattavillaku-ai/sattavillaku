@@ -112,13 +112,20 @@ export function AdminSidebar({ onCloseMobile, className = '' }: AdminSidebarProp
           <Globe className="w-4 h-4 text-muted-foreground" />
           <span>தளத்தைப் பார்க்க (Live Site)</span>
         </Link>
-        <Link
-          href="/admin/login"
-          className="flex items-center gap-2 px-3 py-2 rounded-md text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors font-tamil"
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              const { supabase } = await import('@/lib/supabase');
+              await supabase.auth.signOut();
+            } catch (e) {}
+            window.location.href = '/admin/login';
+          }}
+          className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-md text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors font-tamil"
         >
           <LogOut className="w-4 h-4" />
           <span>வெளியேறு (Logout)</span>
-        </Link>
+        </button>
       </div>
     </aside>
   );
