@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Shield, ShieldAlert, ArrowRight, Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Shield, ShieldAlert, Loader2, ArrowLeft } from 'lucide-react';
 import { BrandLogo } from '@/components/brand-logo';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { supabase } from '@/lib/supabase';
@@ -55,11 +55,6 @@ export default function AdminLoginPage() {
     }
   };
 
-  const handleBypassDemo = () => {
-    // Quick entry for local testing
-    window.location.href = '/admin';
-  };
-
   if (checkingInitialSession) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30 font-tamil">
@@ -106,18 +101,14 @@ export default function AdminLoginPage() {
         </div>
 
         {/* Security Notice */}
-        <div className="p-3.5 rounded-lg bg-muted/60 border border-border text-xs text-muted-foreground space-y-1.5">
-          <div className="flex items-center gap-1.5 font-bold text-foreground">
-            <ShieldAlert className="w-4 h-4 text-primary shrink-0" />
-            <span>அங்கீகரிக்கப்பட்ட ஆசிரியர் கணக்குகள் மட்டும்:</span>
+        <div className="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-muted-foreground space-y-1.5">
+          <div className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-400">
+            <ShieldAlert className="w-4 h-4 shrink-0" />
+            <span>நிர்வாகிகள் மட்டுமே உள்நுழையலாம் (Admin Only Login)</span>
           </div>
           <p className="leading-relaxed">
-            கீழ்க்காணும் அனுமதிக்கப்பட்ட கூகிள் கணக்குகள் மூலம் மட்டுமே நிர்வாக கட்டுப்பாட்டகத்தை அணுக முடியும்:
+            இந்தத் தளம் நிர்வாக ஆசிரியர்களுக்கு மட்டுமே ஒதுக்கப்பட்டது. அங்கீகரிக்கப்பட்ட நிர்வாக கூகிள் கணக்கு (Admin Google Account) மூலம் மட்டுமே உள்நுழைய முடியும்.
           </p>
-          <div className="font-mono text-[11px] font-bold text-foreground bg-card p-2 rounded-xs border border-border/80 space-y-0.5">
-            <div>• cfilayaraja@gmail.com</div>
-            <div>• sattavilakku@gmail.com</div>
-          </div>
         </div>
 
         {error && (
@@ -132,7 +123,7 @@ export default function AdminLoginPage() {
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full py-3 px-4 rounded-lg border border-border bg-background hover:bg-muted text-foreground font-bold text-sm transition-all shadow-xs hover:shadow-md flex items-center justify-center gap-3 disabled:opacity-60 group"
+            className="w-full py-3 px-4 rounded-lg border border-border bg-background hover:bg-muted text-foreground font-bold text-sm transition-all shadow-xs hover:shadow-md flex items-center justify-center gap-3 disabled:opacity-60 group cursor-pointer"
           >
             {loading ? (
               <>
@@ -164,18 +155,6 @@ export default function AdminLoginPage() {
               </>
             )}
           </button>
-
-          {/* Quick Demo Bypass for local test */}
-          <div className="pt-3 border-t border-border/80 text-center">
-            <button
-              type="button"
-              onClick={handleBypassDemo}
-              className="text-xs text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1 font-semibold"
-            >
-              <span>டெமோ ஆசிரியர் நுழைவு (Direct Preview Access)</span>
-              <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
         </div>
 
         {/* Footer info */}
