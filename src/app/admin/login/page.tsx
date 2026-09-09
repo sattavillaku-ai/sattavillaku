@@ -1,17 +1,36 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Shield, ShieldAlert, ArrowRight, Loader2, ArrowLeft } from 'lucide-react';
+import { Shield, ShieldAlert, ArrowRight, Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { BrandLogo } from '@/components/brand-logo';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { supabase } from '@/lib/supabase';
+import { isAuthorizedAdminEmail } from '@/lib/auth-service';
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [checkingInitialSession, setCheckingInitialSession] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // If already logged in with authorized admin account, redirect straight to /admin
+  useEffect(() => {
+    async function checkSession() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.email && isAuthorizedAdminEmail(session.user.email)) {
+          window.location.href = '/admin';
+          return;
+        }
+      } catch {
+        // Continue to login
+      }
+      setCheckingInitialSession(false);
+    }
+    checkSession();
+  }, []);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -19,7 +38,7 @@ export default function AdminLoginPage() {
 
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      const { data, error: authError } = await supabase.auth.signInWithOAuth({
+      const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${origin}/auth/callback`,
@@ -37,9 +56,20 @@ export default function AdminLoginPage() {
   };
 
   const handleBypassDemo = () => {
-    // Quick entry for local evaluation without Google OAuth setup
-    router.push('/admin');
+    // Quick entry for local testing
+    window.location.href = '/admin';
   };
+
+  if (checkingInitialSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/30 font-tamil">
+        <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+          <span>அமர்வு சரிபார்க்கப்படுகிறது...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center p-4 bg-muted/30 relative font-tamil">
@@ -76,13 +106,13 @@ export default function AdminLoginPage() {
         </div>
 
         {/* Security Notice */}
-        <div className="p-3.5 rounded-lg bg-muted/60 border border-border text-xs text-muted-foreground space-y-1">
+        <div className="p-3.5 rounded-lg bg-muted/60 border border-border text-xs text-muted-foreground space-y-1.5">
           <div className="flex items-center gap-1.5 font-bold text-foreground">
             <ShieldAlert className="w-4 h-4 text-primary shrink-0" />
-            <span>அங்கீகரிக்கப்பட்ட அணுகல் மட்டும்:</span>
+            <span>அங்கீகரிக்கப்பட்ட ஆசிரியர் கூகிள் கணக்கு:</span>
           </div>
           <p className="leading-relaxed">
-            சட்டவிளக்கு ஆசிரியர் குழுமத்தின் அனுமதியளிக்கப்பட்ட கூகிள் மின்னஞ்சல் கணக்குகள் மட்டுமே நிர்வாக அமைப்பிற்குள் அனுமதிக்கப்படும்.
+            அனுமதியளிக்கப்பட்ட நிர்வாக ஆசிரியர் கூகிள் கணக்குகள் மட்டுமே கட்டுப்பாட்டகத்தை அணுக முடியும். பிற கணக்குகள் தானாக நிராகரிக்கப்படும்.
           </p>
         </div>
 
@@ -93,7 +123,7 @@ export default function AdminLoginPage() {
         )}
 
         {/* Google OAuth Login Button Alone */}
-        <div className="space-y-3 pt-2">
+        <div className="space-y-3 pt-1">
           <button
             type="button"
             onClick={handleGoogleLogin}
@@ -131,7 +161,7 @@ export default function AdminLoginPage() {
             )}
           </button>
 
-          {/* Quick Demo Bypass for local preview without Google setup */}
+          {/* Quick Demo Bypass for local test */}
           <div className="pt-3 border-t border-border/80 text-center">
             <button
               type="button"
