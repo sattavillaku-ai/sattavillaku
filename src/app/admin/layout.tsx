@@ -13,8 +13,8 @@ export default function AdminLayout({
   const pathname = usePathname();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // If login page, render standalone clean layout
-  if (pathname === '/admin/login') {
+  // If login or unauthorized page, render standalone clean layout
+  if (pathname === '/admin/login' || pathname === '/admin/unauthorized') {
     return <div className="min-h-screen bg-background text-foreground">{children}</div>;
   }
 

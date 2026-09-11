@@ -1,39 +1,39 @@
-import { supabase } from './supabase';
-
-// ONLY these two email addresses are permitted to access the admin portal
-export const EXCLUSIVE_ADMIN_EMAILS = [
-  'cfilayaraja@gmail.com',
-  'sattavilakku@gmail.com',
-];
-
-export function isAuthorizedAdminEmail(email?: string | null): boolean {
-  if (!email) return false;
-
-  const envConfigured = process.env.NEXT_PUBLIC_ADMIN_EMAILS;
-  const allowed = envConfigured
-    ? envConfigured.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)
-    : EXCLUSIVE_ADMIN_EMAILS;
-
-  const normalized = email.trim().toLowerCase();
-  return allowed.includes(normalized);
-}
+import { createClient } from './supabase/client';
 
 export async function getCurrentAdminUser() {
   try {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error || !session?.user) return null;
+    const supabase = createClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
-    const email = session.user.email;
-    const isAuthorized = isAuthorizedAdminEmail(email);
+    if (error || !user) return null;
+
+    // Check profile role: profiles.id = auth.uid() AND profiles.role = 'admin'
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, full_name, avatar_url')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const isAuthorized = profile?.role === 'admin';
 
     return {
-      user: session.user,
-      email,
+      user,
+      id: user.id,
+      email: user.email,
       name:
-        session.user.user_metadata?.full_name ||
-        session.user.user_metadata?.name ||
-        (email === 'cfilayaraja@gmail.com' ? 'இளையராஜா' : 'சட்டவிளக்கு முதன்மை ஆசிரியர்'),
-      avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null,
+        profile?.full_name ||
+        user.user_metadata?.full_name ||
+        user.user_metadata?.name ||
+        'நிர்வாக ஆசிரியர்',
+      avatar:
+        profile?.avatar_url ||
+        user.user_metadata?.avatar_url ||
+        user.user_metadata?.picture ||
+        null,
+      role: profile?.role || null,
       isAuthorized,
     };
   } catch {

@@ -1,40 +1,75 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Shield, ShieldAlert, Loader2, ArrowLeft } from 'lucide-react';
+import { Shield, ShieldAlert, Loader2, ArrowLeft, Home } from 'lucide-react';
 import { BrandLogo } from '@/components/brand-logo';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { supabase } from '@/lib/supabase';
-import { isAuthorizedAdminEmail } from '@/lib/auth-service';
+import { createClient } from '@/lib/supabase/client';
 
-export default function AdminLoginPage() {
+function LoginFormContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [checkingInitialSession, setCheckingInitialSession] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // If already logged in with authorized admin account, redirect straight to /admin
+  const supabase = createClient();
+
   useEffect(() => {
+    // Check if error=auth is passed via query params
+    const errParam = searchParams.get('error');
+    if (errParam === 'auth') {
+      setErrorMessage('Authentication failed. Please try again.');
+    }
+  }, [searchParams]);
+
+  // If already authenticated, check if authorized admin
+  useEffect(() => {
+    let isMounted = true;
+
     async function checkSession() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user?.email && isAuthorizedAdminEmail(session.user.email)) {
-          window.location.href = '/admin';
-          return;
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user && isMounted) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          if (profile?.role === 'admin') {
+            window.location.href = '/admin';
+            return;
+          } else {
+            // Authenticated non-admin: sign out and redirect to unauthorized
+            await supabase.auth.signOut();
+            window.location.href = '/admin/unauthorized';
+            return;
+          }
         }
       } catch {
         // Continue to login
       }
-      setCheckingInitialSession(false);
+      if (isMounted) {
+        setCheckingInitialSession(false);
+      }
     }
+
     checkSession();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [supabase]);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    setError(null);
+    setErrorMessage(null);
 
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -46,11 +81,11 @@ export default function AdminLoginPage() {
       });
 
       if (authError) {
-        setError(authError.message);
+        setErrorMessage('Authentication failed. Please try again.');
         setLoading(false);
       }
-    } catch (err: any) {
-      setError(err.message || 'கூகிள் உள்நுழைவில் பிழை ஏற்பட்டது.');
+    } catch {
+      setErrorMessage('Authentication failed. Please try again.');
       setLoading(false);
     }
   };
@@ -67,15 +102,15 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center p-4 bg-muted/30 relative font-tamil">
-      {/* Top right controls */}
+    <div className="min-h-screen flex flex-col justify-center items-center p-4 bg-muted/30 relative font-tamil text-foreground">
+      {/* Top right navigation controls */}
       <div className="absolute top-4 right-4 flex items-center gap-2">
         <ThemeToggle />
         <Link
           href="/"
-          className="text-xs font-semibold text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md border border-border bg-card flex items-center gap-1"
+          className="text-xs font-semibold text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md border border-border bg-card flex items-center gap-1.5 transition-colors"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
+          <Home className="w-3.5 h-3.5" />
           <span>தளத்திற்குத் திரும்புக</span>
         </Link>
       </div>
@@ -87,37 +122,39 @@ export default function AdminLoginPage() {
             <BrandLogo size="lg" isLink={false} />
           </div>
           <div className="pt-1">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold mb-1.5">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold font-sans mb-2">
               <Shield className="w-3.5 h-3.5" />
-              <span>நிர்வாக ஆசிரியர் தளம் (Admin Only)</span>
+              <span>Sattavilakku Admin</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-foreground">
-              ஆசிரியர் உள்நுழைவு
+              சட்டவிளக்கு ஆசிரியர் உள்நுழைவு
             </h1>
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              சட்டவிளக்கு மாத இதழ் மற்றும் நாளிதழ் பதிப்பகப் பிரிவு
+              மாத இதழ் மற்றும் நாளிதழ் பதிப்பக நிர்வாக தளம்
             </p>
           </div>
         </div>
 
         {/* Security Notice */}
-        <div className="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-muted-foreground space-y-1.5">
-          <div className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-400">
-            <ShieldAlert className="w-4 h-4 shrink-0" />
-            <span>நிர்வாகிகள் மட்டுமே உள்நுழையலாம் (Admin Only Login)</span>
+        <div className="p-3.5 rounded-lg bg-muted/60 border border-border text-xs text-muted-foreground space-y-1.5">
+          <div className="flex items-center gap-1.5 font-bold text-foreground">
+            <ShieldAlert className="w-4 h-4 text-primary shrink-0" />
+            <span>நிர்வாகிகள் மட்டுமே (Admin Only)</span>
           </div>
           <p className="leading-relaxed">
-            இந்தத் தளம் நிர்வாக ஆசிரியர்களுக்கு மட்டுமே ஒதுக்கப்பட்டது. அங்கீகரிக்கப்பட்ட நிர்வாக கூகிள் கணக்கு (Admin Google Account) மூலம் மட்டுமே உள்நுழைய முடியும்.
+            இந்தத் தளம் அங்கீகரிக்கப்பட்ட நிர்வாக ஆசிரியர்களுக்கு மட்டுமே. அனுமதிக்கப்பட்ட கூகிள் கணக்கு மூலம் மட்டுமே உள்நுழைய முடியும்.
           </p>
         </div>
 
-        {error && (
-          <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium">
-            {error}
+        {/* Error Alert */}
+        {errorMessage && (
+          <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium text-center space-y-0.5">
+            <div className="font-bold">{errorMessage}</div>
+            <div className="text-[11px] opacity-90 font-tamil">உள்நுழைவு தோல்வி. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.</div>
           </div>
         )}
 
-        {/* Google OAuth Login Button Alone */}
+        {/* Google OAuth Login Button */}
         <div className="space-y-3 pt-1">
           <button
             type="button"
@@ -151,17 +188,34 @@ export default function AdminLoginPage() {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                   />
                 </svg>
-                <span className="font-sans">Google மூலம் உள்நுழைக</span>
+                <span className="font-sans font-semibold">Continue with Google</span>
               </>
             )}
           </button>
         </div>
 
         {/* Footer info */}
-        <div className="text-center text-[11px] text-muted-foreground border-t border-border pt-3">
-          <span>Supabase SSR Authentication • Google OAuth 2.0</span>
+        <div className="text-center text-[11px] text-muted-foreground border-t border-border pt-3 font-sans">
+          <span>Sattavilakku Admin • Google OAuth Authentication</span>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-muted/30 font-tamil">
+          <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+            <span>ஏற்றப்படுகிறது...</span>
+          </div>
+        </div>
+      }
+    >
+      <LoginFormContent />
+    </Suspense>
   );
 }

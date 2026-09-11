@@ -116,7 +116,8 @@ export function AdminSidebar({ onCloseMobile, className = '' }: AdminSidebarProp
           type="button"
           onClick={async () => {
             try {
-              const { supabase } = await import('@/lib/supabase');
+              const { createClient } = await import('@/lib/supabase/client');
+              const supabase = createClient();
               await supabase.auth.signOut();
             } catch (e) {}
             window.location.href = '/admin/login';
