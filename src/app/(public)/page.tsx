@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { dataService } from '@/lib/data-service';
 import { Issue, Article, NewsItem } from '@/types';
+import { fetchCurrentIssue, fetchPublishedIssues, fetchArticles, fetchPublishedPublicNews, fetchTopArticlesByViews } from '@/lib/cms-service';
 import { IssueCard } from '@/components/issue-card';
 import { ArticleCard } from '@/components/article-card';
 import { FeaturedArticle } from '@/components/featured-article';
@@ -27,20 +28,65 @@ export default function HomePage() {
   const [currentIssue, setCurrentIssue] = useState<Issue | null>(null);
   const [previousIssues, setPreviousIssues] = useState<Issue[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
+  const [popularArticles, setPopularArticles] = useState<Article[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [selectedNewsCategory, setSelectedNewsCategory] = useState<string>('all');
 
   useEffect(() => {
-    const issues = dataService.getIssues();
-    const curr = dataService.getCurrentIssue();
-    setCurrentIssue(curr);
-    setPreviousIssues(issues.filter((i) => i.id !== curr.id));
+    let isMounted = true;
+    async function loadData() {
+      try {
+        // 1. Fetch Issues, Articles, News, and Top Articles from Supabase
+        const [curr, pubIssues, pubArticles, pubNews, topArticles] = await Promise.all([
+          fetchCurrentIssue(),
+          fetchPublishedIssues({ limit: 5 }),
+          fetchArticles({ status: 'published', limit: 10 }),
+          fetchPublishedPublicNews({ limit: 12 }).catch(() => []),
+          fetchTopArticlesByViews(4).catch(() => []),
+        ]);
 
-    const allArticles = dataService.getPublishedArticles();
-    setArticles(allArticles);
+        if (isMounted) {
+          const fallbackCurr = curr || dataService.getCurrentIssue();
+          setCurrentIssue(fallbackCurr);
 
-    const allNews = dataService.getPublishedNews();
-    setNews(allNews);
+          if (pubIssues.length > 0) {
+            setPreviousIssues(pubIssues.filter((i) => i.id !== fallbackCurr?.id));
+          } else {
+            const fallbackIssues = dataService.getIssues();
+            setPreviousIssues(fallbackIssues.filter((i) => i.id !== fallbackCurr?.id));
+          }
+
+          if (pubArticles.length > 0) {
+            setArticles(pubArticles);
+          } else {
+            setArticles(dataService.getPublishedArticles());
+          }
+
+          if (topArticles.length > 0) {
+            setPopularArticles(topArticles);
+          }
+
+          if (pubNews.length > 0) {
+            setNews(pubNews);
+          } else {
+            setNews(dataService.getPublishedNews());
+          }
+        }
+      } catch (err) {
+        console.error('Error loading homepage data:', err);
+        if (isMounted) {
+          const curr = dataService.getCurrentIssue();
+          setCurrentIssue(curr);
+          setPreviousIssues(dataService.getIssues().filter((i) => i.id !== curr.id));
+          setArticles(dataService.getPublishedArticles());
+          setNews(dataService.getPublishedNews());
+        }
+      }
+    }
+    loadData();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const featuredArticle = articles.find((a) => a.featured) || articles[0];
@@ -204,7 +250,52 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 5. PREVIOUS ISSUES (முந்தைய இதழ்கள்) */}
+      {/* 5. POPULAR / MOST READ ARTICLES (Only when real views exist) */}
+      {popularArticles.some((a) => (a.views || 0) > 0) && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-6 border-b-2 border-primary pb-3">
+            <div className="flex items-center gap-2">
+              <Flame className="w-5 h-5 text-primary" />
+              <h2 className="text-xl sm:text-2xl font-bold font-tamil text-foreground">
+                அதிகம் வாசிக்கப்பட்டவை (Most Read)
+              </h2>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {popularArticles
+              .filter((a) => (a.views || 0) > 0)
+              .slice(0, 4)
+              .map((art, idx) => (
+                <Link
+                  key={art.id}
+                  href={`/articles/${art.slug}`}
+                  className="p-4 rounded-md border border-border bg-card hover:border-primary/50 transition-all flex flex-col justify-between group shadow-2xs"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-mono font-bold text-primary px-2 py-0.5 rounded-xs bg-primary/10">
+                        #{idx + 1}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground font-tamil">
+                        {art.views} பார்வைகள்
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-bold font-tamil text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                      {art.title}
+                    </h3>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground font-tamil pt-3 border-t border-border/60 mt-3 flex items-center justify-between">
+                    <span>{art.author?.name || 'சட்டவிளக்கு'}</span>
+                    <span className="text-primary font-semibold group-hover:underline">வாசிக்க &rarr;</span>
+                  </div>
+                </Link>
+              ))}
+          </div>
+        </section>
+      )}
+
+      {/* 6. PREVIOUS ISSUES (முந்தைய இதழ்கள்) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-6 border-b-2 border-primary pb-3">
           <div>

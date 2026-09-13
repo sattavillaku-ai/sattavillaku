@@ -2,28 +2,63 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Archive, Search, Filter, BookOpen } from 'lucide-react';
-import { dataService } from '@/lib/data-service';
+import { Archive, Search, BookOpen, Loader2 } from 'lucide-react';
 import { Issue } from '@/types';
 import { IssueCard } from '@/components/issue-card';
 import { EmptyState } from '@/components/empty-state';
+import { fetchArchivedIssues } from '@/lib/cms-service';
 
 export default function MagazineArchivePage() {
   const [issues, setIssues] = useState<Issue[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
   const [query, setQuery] = useState('');
 
   useEffect(() => {
-    setIssues(dataService.getIssues());
+    let isMounted = true;
+    async function load() {
+      try {
+        setLoading(true);
+        const data = await fetchArchivedIssues();
+        if (isMounted) {
+          setIssues(data);
+        }
+      } catch (err) {
+        console.error('Error loading magazine archive:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const years = Array.from(new Set(issues.map((i) => i.year))).sort((a, b) => b - a);
-  const months = ['அனைத்தும்', 'ஜனவரி', 'பிப்ரவரி', 'மார்ச்', 'ஏப்ரல்', 'மே', 'ஜூன்', 'ஜூலை', 'ஆகஸ்ட்', 'செப்டம்பர்', 'அக்டோபர்', 'நவம்பர்', 'டிசம்பர்'];
+  const years = Array.from(new Set(issues.map((i) => i.year).filter(Boolean))).sort(
+    (a, b) => b - a
+  );
+  const months = [
+    'அனைத்தும்',
+    'ஜனவரி',
+    'பிப்ரவரி',
+    'மார்ச்',
+    'ஏப்ரல்',
+    'மே',
+    'ஜூன்',
+    'ஜூலை',
+    'ஆகஸ்ட்',
+    'செப்டம்பர்',
+    'அக்டோபர்',
+    'நவம்பர்',
+    'டிசம்பர்',
+  ];
 
   const filtered = issues.filter((issue) => {
     const matchesYear = selectedYear === 'all' || issue.year.toString() === selectedYear;
-    const matchesMonth = selectedMonth === 'all' || selectedMonth === 'அனைத்தும்' || issue.month === selectedMonth;
+    const matchesMonth =
+      selectedMonth === 'all' || selectedMonth === 'அனைத்தும்' || issue.month === selectedMonth;
     const matchesQuery =
       query.trim() === '' ||
       issue.title.toLowerCase().includes(query.toLowerCase()) ||
@@ -32,8 +67,17 @@ export default function MagazineArchivePage() {
     return matchesYear && matchesMonth && matchesQuery;
   });
 
+  // Group by year for neat hierarchical presentation
+  const groupedByYear = years.reduce<Record<number, Issue[]>>((acc, y) => {
+    const matched = filtered.filter((i) => i.year === y);
+    if (matched.length > 0) {
+      acc[y] = matched;
+    }
+    return acc;
+  }, {});
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 font-tamil">
       {/* Breadcrumb */}
       <nav className="text-xs text-muted-foreground flex items-center gap-2">
         <Link href="/" className="hover:text-primary">முகப்பு</Link>
@@ -49,11 +93,11 @@ export default function MagazineArchivePage() {
           <Archive className="w-4 h-4" />
           <span>சட்டவிளக்கு வரலாற்றுத் தொகுப்புகள்</span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold font-tamil text-foreground">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground">
           இதழ் காப்பகம் (Magazine Archive)
         </h1>
-        <p className="text-sm sm:text-base text-muted-foreground mt-1 font-tamil">
-          ஆண்டுகள் மற்றும் மாதங்கள் வாரியாக சட்டவிளக்கு பழைய இதழ்களைத் தேடி வாசியுங்கள்.
+        <p className="text-sm sm:text-base text-muted-foreground mt-1 leading-relaxed">
+          ஆண்டுகள் மற்றும் மாதங்கள் வாரியாக சட்டவிளக்கு முந்தைய இதழ்களைத் தேடி வாசியுங்கள்.
         </p>
       </div>
 
@@ -62,7 +106,7 @@ export default function MagazineArchivePage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Query input */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-foreground font-tamil">சொல் தேடல்:</label>
+            <label className="text-xs font-bold text-foreground">சொல் தேடல்:</label>
             <div className="relative">
               <input
                 type="text"
@@ -77,11 +121,11 @@ export default function MagazineArchivePage() {
 
           {/* Year selector */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-foreground font-tamil">ஆண்டு:</label>
+            <label className="text-xs font-bold text-foreground">ஆண்டு:</label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary font-mono"
             >
               <option value="all">அனைத்து ஆண்டுகள்</option>
               {years.map((y) => (
@@ -94,7 +138,7 @@ export default function MagazineArchivePage() {
 
           {/* Month selector */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-foreground font-tamil">மாதம்:</label>
+            <label className="text-xs font-bold text-foreground">மாதம்:</label>
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
@@ -110,14 +154,12 @@ export default function MagazineArchivePage() {
         </div>
       </div>
 
-      {/* Grid */}
-      {filtered.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-          {filtered.map((issue) => (
-            <IssueCard key={issue.id} issue={issue} />
-          ))}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center p-20 gap-3 text-muted-foreground">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <span className="text-xs">காப்பக இதழ்கள் ஏற்றப்படுகின்றன...</span>
         </div>
-      ) : (
+      ) : filtered.length === 0 ? (
         <EmptyState
           title="காப்பகத்தில் இதழ்கள் எதுவும் கிடைக்கவில்லை"
           description="நீங்கள் தேர்ந்தெடுத்த ஆண்டு அல்லது மாதத்திற்கான இதழ்கள் எதுவும் கிடைக்கவில்லை."
@@ -128,6 +170,22 @@ export default function MagazineArchivePage() {
             setQuery('');
           }}
         />
+      ) : (
+        <div className="space-y-10">
+          {Object.entries(groupedByYear).map(([year, yearIssues]) => (
+            <section key={year} className="space-y-4">
+              <div className="flex items-center gap-3 border-b border-border pb-2">
+                <span className="text-xl sm:text-2xl font-black text-primary font-mono">{year}</span>
+                <span className="text-xs text-muted-foreground">({yearIssues.length} இதழ்கள்)</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {yearIssues.map((issue) => (
+                  <IssueCard key={issue.id} issue={issue} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       )}
     </div>
   );

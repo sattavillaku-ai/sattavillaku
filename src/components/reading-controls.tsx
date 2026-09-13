@@ -44,6 +44,7 @@ export function ReadingControls({
               : 'bg-card border-border text-foreground hover:bg-muted'
           }`}
           title="சிறிய எழுத்து"
+          aria-label="சிறிய எழுத்து அளவு"
         >
           A-
         </button>
@@ -58,6 +59,7 @@ export function ReadingControls({
               : 'bg-card border-border text-foreground hover:bg-muted'
           }`}
           title="இயல்பான அளவு"
+          aria-label="இயல்பான எழுத்து அளவு"
         >
           A
         </button>
@@ -72,6 +74,7 @@ export function ReadingControls({
               : 'bg-card border-border text-foreground hover:bg-muted'
           }`}
           title="பெரிய எழுத்து"
+          aria-label="பெரிய எழுத்து அளவு"
         >
           A+
         </button>
@@ -86,6 +89,7 @@ export function ReadingControls({
               : 'bg-card border-border text-foreground hover:bg-muted'
           }`}
           title="மிகப் பெரிய எழுத்து"
+          aria-label="மிகப் பெரிய எழுத்து அளவு"
         >
           A++
         </button>
@@ -96,6 +100,7 @@ export function ReadingControls({
           onClick={() => setFontSize('base')}
           className="p-1 rounded-xs border border-border bg-card text-muted-foreground hover:text-foreground ml-1"
           title="மீட்டமை"
+          aria-label="இயல்பு நிலைக்கு மீட்டமை"
         >
           <RotateCcw className="w-3 h-3" />
         </button>
@@ -112,6 +117,8 @@ export function ReadingControls({
               : 'bg-card border-border text-foreground hover:bg-muted'
           }`}
           title="வாசிப்பு முறை (Focus mode)"
+          aria-label={readingMode ? 'இயல்பு முறைக்கு மாறுக' : 'வாசிப்பு முறைக்கு மாறுக'}
+          aria-pressed={readingMode}
         >
           <BookOpen className="w-3.5 h-3.5" />
           <span>{readingMode ? 'இயல்பு முறை' : 'வாசிப்பு முறை'}</span>
@@ -123,6 +130,7 @@ export function ReadingControls({
           onClick={handlePrint}
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xs border border-border bg-card text-foreground hover:bg-muted transition-colors"
           title="அச்சிடுக"
+          aria-label="இக்கட்டுரையை அச்சிடுக"
         >
           <Printer className="w-3.5 h-3.5 text-muted-foreground" />
           <span className="hidden sm:inline">அச்சிட</span>

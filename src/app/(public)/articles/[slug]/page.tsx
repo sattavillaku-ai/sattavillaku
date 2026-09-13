@@ -16,12 +16,14 @@ import {
   Bookmark
 } from 'lucide-react';
 import { dataService } from '@/lib/data-service';
-import { Article, Category } from '@/types';
+import { fetchArticleBySlug, fetchCategories, fetchArticles, fetchRelatedContentForArticle } from '@/lib/cms-service';
+import { Article, Category, NewsItem } from '@/types';
 import { CategoryBadge } from '@/components/category-badge';
 import { AuthorInfo } from '@/components/author-info';
 import { ShareButtons } from '@/components/share-buttons';
 import { ReadingControls } from '@/components/reading-controls';
 import { ArticleCard } from '@/components/article-card';
+import { NewsCard } from '@/components/news-card';
 import { EmptyState } from '@/components/empty-state';
 import { formatDateTamil } from '@/lib/utils';
 
@@ -34,6 +36,7 @@ export default function ArticleOrCategoryDynamicPage() {
 
   const [article, setArticle] = useState<Article | null>(null);
   const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
+  const [relatedNews, setRelatedNews] = useState<NewsItem[]>([]);
   const [fontSize, setFontSize] = useState<'sm' | 'base' | 'lg' | 'xl'>('base');
   const [readingMode, setReadingMode] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -41,34 +44,86 @@ export default function ArticleOrCategoryDynamicPage() {
   useEffect(() => {
     if (!rawSlug) return;
 
-    // 1. Check if slug matches a category
-    const foundCategory = dataService.getCategories().find(
-      (c) => c.slug.toLowerCase() === rawSlug.toLowerCase()
-    );
+    async function resolveSlug() {
+      try {
+        setLoading(true);
+        // 1. Check if slug matches a category in Supabase or mock
+        const categories = await fetchCategories().catch(() => dataService.getCategories());
+        const foundCategory = categories.find(
+          (c) => c.slug.toLowerCase() === rawSlug.toLowerCase()
+        );
 
-    if (foundCategory) {
-      setCategory(foundCategory);
-      setCategoryArticles(dataService.getArticlesByCategory(foundCategory.slug));
-      setArticle(null);
-      setLoading(false);
-      return;
+        if (foundCategory) {
+          setCategory(foundCategory);
+          const catArticles = await fetchArticles({ categoryId: foundCategory.id, status: 'published' })
+            .catch(() => dataService.getArticlesByCategory(foundCategory.slug));
+          setCategoryArticles(catArticles.length > 0 ? catArticles : dataService.getArticlesByCategory(foundCategory.slug));
+          setArticle(null);
+          setLoading(false);
+          return;
+        }
+
+        // 2. Otherwise check if slug matches an article in Supabase
+        const realArticle = await fetchArticleBySlug(rawSlug);
+        if (realArticle) {
+          setArticle(realArticle);
+          setCategory(null);
+
+          // Track view safely once per browser session
+          if (typeof window !== 'undefined' && realArticle.id) {
+            const storageKey = `sv_view_${realArticle.id}`;
+            if (!sessionStorage.getItem(storageKey)) {
+              sessionStorage.setItem(storageKey, '1');
+              fetch('/api/articles/track-view', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ articleId: realArticle.id }),
+              }).catch(() => {});
+            }
+          }
+
+          // Deterministic Related Content Engine
+          const relatedData = await fetchRelatedContentForArticle({
+            articleId: realArticle.id,
+            categoryId: realArticle.category_id,
+            categorySlug: realArticle.category,
+            tags: realArticle.tags,
+            limit: 3,
+          }).catch(() => ({ relatedArticles: [], relatedNews: [] }));
+
+          setRelatedArticles(
+            relatedData.relatedArticles.length > 0
+              ? relatedData.relatedArticles
+              : dataService.getPublishedArticles().filter((a) => a.id !== realArticle.id).slice(0, 3)
+          );
+          setRelatedNews(relatedData.relatedNews || []);
+          setLoading(false);
+          return;
+        }
+
+        // 3. Fallback to mock data
+        const foundArticle = dataService.getArticleBySlug(rawSlug) || dataService.getArticles()[0];
+        if (foundArticle) {
+          setArticle(foundArticle);
+          setCategory(null);
+          const related = dataService
+            .getPublishedArticles()
+            .filter((a) => a.id !== foundArticle.id && a.category === foundArticle.category)
+            .slice(0, 3);
+          setRelatedArticles(
+            related.length > 0 ? related : dataService.getPublishedArticles().filter((a) => a.id !== foundArticle.id).slice(0, 3)
+          );
+        }
+      } catch (err) {
+        console.error('Error resolving slug:', err);
+        const fallback = dataService.getArticleBySlug(rawSlug) || dataService.getArticles()[0];
+        setArticle(fallback || null);
+      } finally {
+        setLoading(false);
+      }
     }
 
-    // 2. Otherwise check if slug matches an article
-    const foundArticle = dataService.getArticleBySlug(rawSlug) || dataService.getArticles()[0];
-    if (foundArticle) {
-      setArticle(foundArticle);
-      setCategory(null);
-      // Related articles from same category
-      const related = dataService
-        .getPublishedArticles()
-        .filter((a) => a.id !== foundArticle.id && a.category === foundArticle.category)
-        .slice(0, 3);
-      setRelatedArticles(
-        related.length > 0 ? related : dataService.getPublishedArticles().filter((a) => a.id !== foundArticle.id).slice(0, 3)
-      );
-    }
-    setLoading(false);
+    resolveSlug();
   }, [rawSlug]);
 
   if (loading) {
@@ -349,6 +404,23 @@ export default function ArticleOrCategoryDynamicPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {relatedArticles.map((rel) => (
                 <ArticleCard key={rel.id} article={rel} layout="standard" />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Related News Stories */}
+        {relatedNews.length > 0 && (
+          <section className="pt-8 border-t border-border/70 space-y-4">
+            <h2 className="text-lg font-bold font-tamil text-foreground border-b border-border pb-2 flex items-center justify-between">
+              <span>தொடர்புடைய அன்றாடச் செய்திகள் (Related Daily News)</span>
+              <Link href={`/news/${article.category}`} className="text-xs text-primary hover:underline font-semibold">
+                அனைத்தும் பார்க்க &rarr;
+              </Link>
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {relatedNews.map((newsItem) => (
+                <NewsCard key={newsItem.id} news={newsItem} variant="grid" />
               ))}
             </div>
           </section>

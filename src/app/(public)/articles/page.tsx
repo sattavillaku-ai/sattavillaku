@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Newspaper, Search, Filter, Sparkles, Clock, Calendar } from 'lucide-react';
 import { dataService } from '@/lib/data-service';
+import { fetchArticles, fetchCategories } from '@/lib/cms-service';
 import { Article, Category } from '@/types';
 import { ArticleCard } from '@/components/article-card';
 import { FeaturedArticle } from '@/components/featured-article';
@@ -19,8 +20,28 @@ export default function ArticlesPage() {
   const itemsPerPage = 6;
 
   useEffect(() => {
-    setArticles(dataService.getPublishedArticles());
-    setCategories(dataService.getCategories());
+    async function loadArticles() {
+      try {
+        const [realArticles, realCategories] = await Promise.all([
+          fetchArticles({ status: 'published' }),
+          fetchCategories(),
+        ]);
+        if (realArticles && realArticles.length > 0) {
+          setArticles(realArticles);
+        } else {
+          setArticles(dataService.getPublishedArticles());
+        }
+        if (realCategories && realCategories.length > 0) {
+          setCategories(realCategories);
+        } else {
+          setCategories(dataService.getCategories());
+        }
+      } catch {
+        setArticles(dataService.getPublishedArticles());
+        setCategories(dataService.getCategories());
+      }
+    }
+    loadArticles();
   }, []);
 
   const featuredArticle = articles.find((a) => a.featured) || articles[0];

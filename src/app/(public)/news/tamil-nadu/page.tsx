@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { MapPin, ArrowLeft } from 'lucide-react';
 import { dataService } from '@/lib/data-service';
+import { fetchPublishedPublicNews } from '@/lib/cms-service';
 import { NewsItem } from '@/types';
 import { NewsCard } from '@/components/news-card';
 import { EmptyState } from '@/components/empty-state';
@@ -12,7 +13,26 @@ export default function TamilNaduNewsPage() {
   const [tnNews, setTnNews] = useState<NewsItem[]>([]);
 
   useEffect(() => {
-    setTnNews(dataService.getNewsByCategory('tamil-nadu'));
+    let isMounted = true;
+    async function load() {
+      try {
+        const realNews = await fetchPublishedPublicNews({ categorySlug: 'tamil-nadu' });
+        if (isMounted) {
+          if (realNews && realNews.length > 0) {
+            setTnNews(realNews);
+          } else {
+            setTnNews(dataService.getNewsByCategory('tamil-nadu'));
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching published Tamil Nadu news:', err);
+        if (isMounted) setTnNews(dataService.getNewsByCategory('tamil-nadu'));
+      }
+    }
+    load();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (

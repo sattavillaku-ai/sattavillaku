@@ -72,7 +72,7 @@ export function IssueCard({ issue, featured = false, className = '' }: IssueCard
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link
-                href={`/magazine/${issue.slug}`}
+                href={`/magazine/${issue.slug}/read`}
                 className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors shadow-xs"
               >
                 <BookOpen className="w-4 h-4" />
@@ -126,7 +126,7 @@ export function IssueCard({ issue, featured = false, className = '' }: IssueCard
         <div className="pt-3 mt-3 border-t border-border/70 flex items-center justify-between text-xs">
           <span className="text-muted-foreground">{issue.pageCount} பக்கங்கள்</span>
           <Link
-            href={`/magazine/${issue.slug}`}
+            href={`/magazine/${issue.slug}/read`}
             className="text-primary font-bold hover:underline flex items-center gap-1"
           >
             <span>படிக்க</span>

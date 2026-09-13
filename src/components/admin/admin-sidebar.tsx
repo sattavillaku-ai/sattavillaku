@@ -12,6 +12,7 @@ import {
   Image as ImageIcon,
   FolderTree,
   Users,
+  Tag,
   Settings,
   Globe,
   LogOut,
@@ -36,6 +37,7 @@ export function AdminSidebar({ onCloseMobile, className = '' }: AdminSidebarProp
     { name: 'மீடியா நூலகம் (Media)', href: '/admin/media', icon: ImageIcon },
     { name: 'பிரிவுகள் (Categories)', href: '/admin/categories', icon: FolderTree },
     { name: 'ஆசிரியர்கள் (Authors)', href: '/admin/authors', icon: Users },
+    { name: 'குறிச்சொற்கள் (Tags)', href: '/admin/tags', icon: Tag },
     { name: 'அமைப்புகள் (Settings)', href: '/admin/settings', icon: Settings },
   ];
 

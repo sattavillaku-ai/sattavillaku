@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Search, X, BookOpen, Newspaper, Calendar, ArrowRight, Filter, Scale } from 'lucide-react';
 import { dataService } from '@/lib/data-service';
+import { fetchArticles, fetchPublishedIssues, fetchPublishedPublicNews } from '@/lib/cms-service';
 import { Article, NewsItem, Issue } from '@/types';
 import { CategoryBadge } from '@/components/category-badge';
 import { EmptyState } from '@/components/empty-state';
@@ -19,9 +20,35 @@ export default function SearchPage() {
   const [issues, setIssues] = useState<Issue[]>([]);
 
   useEffect(() => {
-    setArticles(dataService.getPublishedArticles());
-    setNews(dataService.getPublishedNews());
-    setIssues(dataService.getIssues());
+    let isMounted = true;
+    async function loadSearchCorpus() {
+      try {
+        setIsSearching(true);
+        const [pubArticles, pubIssues, pubNews] = await Promise.all([
+          fetchArticles({ status: 'published', limit: 100 }).catch(() => []),
+          fetchPublishedIssues({ limit: 50 }).catch(() => []),
+          fetchPublishedPublicNews({ limit: 100 }).catch(() => []),
+        ]);
+
+        if (isMounted) {
+          setArticles(pubArticles.length > 0 ? pubArticles : dataService.getPublishedArticles());
+          setIssues(pubIssues.length > 0 ? pubIssues : dataService.getIssues());
+          setNews(pubNews.length > 0 ? pubNews : dataService.getPublishedNews());
+        }
+      } catch (err) {
+        if (isMounted) {
+          setArticles(dataService.getPublishedArticles());
+          setNews(dataService.getPublishedNews());
+          setIssues(dataService.getIssues());
+        }
+      } finally {
+        if (isMounted) setIsSearching(false);
+      }
+    }
+    loadSearchCorpus();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const filters = [

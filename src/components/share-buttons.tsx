@@ -29,7 +29,24 @@ export function ShareButtons({ title, url, className = '' }: ShareButtonsProps) 
   };
 
   const shareUrl = encodeURIComponent(getShareUrl());
-  const shareTitle = encodeURIComponent(title);
+  const formattedTitle = `சட்டவிளக்கு: ${title}`;
+  const shareTitle = encodeURIComponent(formattedTitle);
+
+  const handleNativeShare = async () => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: formattedTitle,
+          text: title,
+          url: getShareUrl(),
+        });
+      } catch {
+        // User cancelled or not supported
+      }
+    }
+  };
+
+  const hasNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
 
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className}`}>
@@ -40,11 +57,12 @@ export function ShareButtons({ title, url, className = '' }: ShareButtonsProps) 
 
       {/* WhatsApp */}
       <a
-        href={`https://api.whatsapp.com/send?text=${shareTitle}%20${shareUrl}`}
+        href={`https://api.whatsapp.com/send?text=${shareTitle}%0A${shareUrl}`}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xs bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 text-xs font-medium border border-[#25D366]/20 transition-colors"
         title="WhatsApp-ல் பகிர"
+        aria-label="WhatsApp-ல் இச்செய்தியைப் பகிரவும்"
       >
         <MessageCircle className="w-3.5 h-3.5" />
         <span>WhatsApp</span>
@@ -57,6 +75,7 @@ export function ShareButtons({ title, url, className = '' }: ShareButtonsProps) 
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xs bg-foreground/10 text-foreground hover:bg-foreground/20 text-xs font-medium border border-border transition-colors"
         title="X (Twitter)-ல் பகிர"
+        aria-label="X தளத்தில் பகிரவும்"
       >
         <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -71,6 +90,7 @@ export function ShareButtons({ title, url, className = '' }: ShareButtonsProps) 
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xs bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2]/20 text-xs font-medium border border-[#1877F2]/20 transition-colors"
         title="Facebook-ல் பகிர"
+        aria-label="Facebook-ல் பகிரவும்"
       >
         <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
@@ -85,6 +105,7 @@ export function ShareButtons({ title, url, className = '' }: ShareButtonsProps) 
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xs bg-[#229ED9]/10 text-[#229ED9] hover:bg-[#229ED9]/20 text-xs font-medium border border-[#229ED9]/20 transition-colors"
         title="Telegram-ல் பகிர"
+        aria-label="Telegram-ல் பகிரவும்"
       >
         <Send className="w-3.5 h-3.5" />
         <span>Telegram</span>
@@ -94,8 +115,9 @@ export function ShareButtons({ title, url, className = '' }: ShareButtonsProps) 
       <button
         type="button"
         onClick={handleCopy}
-        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xs border border-border bg-card text-foreground hover:bg-muted text-xs font-medium transition-colors"
+        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xs border border-border bg-card text-foreground hover:bg-muted text-xs font-medium transition-colors cursor-pointer"
         title="இணைப்பை நகலெடு"
+        aria-label="இணைப்பை நகலெடுக்கவும்"
       >
         {copied ? (
           <>
@@ -109,6 +131,20 @@ export function ShareButtons({ title, url, className = '' }: ShareButtonsProps) 
           </>
         )}
       </button>
+
+      {/* Mobile Native Share */}
+      {hasNativeShare && (
+        <button
+          type="button"
+          onClick={handleNativeShare}
+          className="inline-flex sm:hidden items-center gap-1 px-2.5 py-1 rounded-xs bg-primary text-primary-foreground text-xs font-medium transition-colors"
+          title="மேலும் பகிர"
+          aria-label="பிற செயலிகளில் பகிரவும்"
+        >
+          <Share2 className="w-3.5 h-3.5" />
+          <span>பகிர்</span>
+        </button>
+      )}
     </div>
   );
 }

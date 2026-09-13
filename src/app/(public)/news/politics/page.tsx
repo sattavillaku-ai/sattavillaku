@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Landmark, ArrowLeft, Filter } from 'lucide-react';
 import { dataService } from '@/lib/data-service';
+import { fetchPublishedPublicNews } from '@/lib/cms-service';
 import { NewsItem } from '@/types';
 import { NewsCard } from '@/components/news-card';
 import { EmptyState } from '@/components/empty-state';
@@ -12,7 +13,26 @@ export default function PoliticsNewsPage() {
   const [politicsNews, setPoliticsNews] = useState<NewsItem[]>([]);
 
   useEffect(() => {
-    setPoliticsNews(dataService.getNewsByCategory('politics'));
+    let isMounted = true;
+    async function load() {
+      try {
+        const realNews = await fetchPublishedPublicNews({ categorySlug: 'politics' });
+        if (isMounted) {
+          if (realNews && realNews.length > 0) {
+            setPoliticsNews(realNews);
+          } else {
+            setPoliticsNews(dataService.getNewsByCategory('politics'));
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching published politics news:', err);
+        if (isMounted) setPoliticsNews(dataService.getNewsByCategory('politics'));
+      }
+    }
+    load();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (

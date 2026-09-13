@@ -2,26 +2,45 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { BookOpen, Calendar, Filter, Search, ArrowRight } from 'lucide-react';
-import { dataService } from '@/lib/data-service';
+import { BookOpen, Calendar, Filter, Search, ArrowRight, Loader2 } from 'lucide-react';
 import { Issue } from '@/types';
 import { IssueCard } from '@/components/issue-card';
 import { EmptyState } from '@/components/empty-state';
+import { fetchPublishedIssues } from '@/lib/cms-service';
 
 export default function MagazinePage() {
   const [issues, setIssues] = useState<Issue[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
-    const all = dataService.getIssues();
-    setIssues(all);
+    let isMounted = true;
+    async function load() {
+      try {
+        setLoading(true);
+        const all = await fetchPublishedIssues();
+        if (isMounted) {
+          setIssues(all);
+        }
+      } catch (err) {
+        console.error('Error fetching published issues:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const currentIssue = issues.find((i) => i.status === 'published') || issues[0];
+  const currentIssue = issues.length > 0 ? issues[0] : null;
   const previousIssues = issues.filter((i) => i.id !== currentIssue?.id);
 
-  const availableYears = Array.from(new Set(issues.map((i) => i.year))).sort((a, b) => b - a);
+  const availableYears = Array.from(
+    new Set(issues.map((i) => i.year).filter(Boolean))
+  ).sort((a, b) => b - a);
 
   const filteredIssues = previousIssues.filter((issue) => {
     const matchesYear = selectedYear === 'all' || issue.year.toString() === selectedYear;
@@ -42,108 +61,128 @@ export default function MagazinePage() {
           <span>சட்டவிளக்கு மாத இதழ்கள்</span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold font-tamil text-foreground">
-          இதழ்கள் தொகுப்பு (Magazine Archive)
+          இதழ்கள் தொகுப்பு (Magazine Issues)
         </h1>
         <p className="text-sm sm:text-base text-muted-foreground mt-2 font-tamil max-w-3xl leading-relaxed">
           சட்டம், அரசியல் மற்றும் சமூக விழிப்புணர்வு குறித்த சிறப்புக் கட்டுரைகளைத் தாங்கி வெளிவரும் சட்டவிளக்கு அச்சு மற்றும் டிஜிட்டல் மாத இதழ்களை வாசியுங்கள்.
         </p>
       </div>
 
-      {/* Current Issue Hero */}
-      {currentIssue && (
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold font-tamil text-foreground flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-primary" />
-              தற்போதைய இதழ் (Current Issue)
-            </h2>
-            <Link
-              href="/magazine/current"
-              className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
-            >
-              <span>முழு விவரம்</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-          <IssueCard issue={currentIssue} featured />
-        </section>
-      )}
-
-      {/* Previous Issues & Filtering */}
-      <section className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold font-tamil text-foreground">
-              முந்தைய இதழ்கள் (Previous Editions)
-            </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              ஆண்டு வாரியாக இதழ்களைத் தேர்ந்தெடுக்கவும்
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Search within issues */}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="இதழ் தலைப்பு / எண்..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1.5 rounded-md border border-border bg-card text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary w-48 sm:w-56"
-              />
-              <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
-            </div>
-
-            {/* Year selector */}
-            <div className="flex items-center gap-1 bg-muted p-1 rounded-md border border-border text-xs">
-              <button
-                type="button"
-                onClick={() => setSelectedYear('all')}
-                className={`px-2.5 py-1 rounded-xs font-semibold transition-colors ${
-                  selectedYear === 'all'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                அனைத்தும்
-              </button>
-              {availableYears.map((year) => (
-                <button
-                  key={year}
-                  type="button"
-                  onClick={() => setSelectedYear(year.toString())}
-                  className={`px-2.5 py-1 rounded-xs font-semibold transition-colors ${
-                    selectedYear === year.toString()
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {year}
-                </button>
-              ))}
-            </div>
-          </div>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center p-20 gap-3 text-muted-foreground font-tamil">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <span className="text-xs">இதழ்கள் ஏற்றப்படுகின்றன...</span>
         </div>
+      ) : issues.length === 0 ? (
+        <EmptyState
+          title="வெளியிடப்பட்ட இதழ்கள் எதுவும் இல்லை"
+          description="விரைவில் புதிய மாத இதழ்கள் பதிவேற்றப்பட்டு வெளியிடப்படும்."
+          actionText="முகப்பிற்குத் திரும்புக"
+          actionHref="/"
+        />
+      ) : (
+        <>
+          {/* Current Issue Hero */}
+          {currentIssue && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold font-tamil text-foreground flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary" />
+                  தற்போதைய இதழ் (Current Issue)
+                </h2>
+                <Link
+                  href="/magazine/current"
+                  className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                >
+                  <span>முழு விவரம்</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+              <IssueCard issue={currentIssue} featured />
+            </section>
+          )}
 
-        {/* Issue Cards Grid */}
-        {filteredIssues.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {filteredIssues.map((issue) => (
-              <IssueCard key={issue.id} issue={issue} />
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            title="இதழ்கள் எதுவும் கிடைக்கவில்லை"
-            description="நீங்கள் குறிப்பிட்ட ஆண்டு அல்லது தேடல் சொல்லிற்குரிய இதழ்கள் எதுவும் இல்லை."
-            actionText="வடிகட்டலை மீட்டமை"
-            onAction={() => {
-              setSelectedYear('all');
-              setSearchQuery('');
-            }}
-          />
-        )}
-      </section>
+          {/* Previous Issues & Filtering */}
+          {previousIssues.length > 0 && (
+            <section className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold font-tamil text-foreground">
+                    முந்தைய இதழ்கள் (Previous Editions)
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    ஆண்டு வாரியாக இதழ்களைத் தேர்ந்தெடுக்கவும்
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Search within issues */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="இதழ் தலைப்பு / எண்..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-8 pr-3 py-1.5 rounded-md border border-border bg-card text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary w-48 sm:w-56"
+                    />
+                    <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  </div>
+
+                  {/* Year selector */}
+                  {availableYears.length > 0 && (
+                    <div className="flex items-center gap-1 bg-muted p-1 rounded-md border border-border text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedYear('all')}
+                        className={`px-2.5 py-1 rounded-xs font-semibold transition-colors cursor-pointer ${
+                          selectedYear === 'all'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        அனைத்தும்
+                      </button>
+                      {availableYears.map((year) => (
+                        <button
+                          key={year}
+                          type="button"
+                          onClick={() => setSelectedYear(year.toString())}
+                          className={`px-2.5 py-1 rounded-xs font-semibold transition-colors cursor-pointer ${
+                            selectedYear === year.toString()
+                              ? 'bg-primary text-primary-foreground'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          {year}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Issue Cards Grid */}
+              {filteredIssues.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                  {filteredIssues.map((issue) => (
+                    <IssueCard key={issue.id} issue={issue} />
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  title="இதழ்கள் எதுவும் கிடைக்கவில்லை"
+                  description="நீங்கள் குறிப்பிட்ட ஆண்டு அல்லது தேடல் சொல்லிற்குரிய இதழ்கள் எதுவும் இல்லை."
+                  actionText="வடிகட்டலை மீட்டமை"
+                  onAction={() => {
+                    setSelectedYear('all');
+                    setSearchQuery('');
+                  }}
+                />
+              )}
+            </section>
+          )}
+        </>
+      )}
     </div>
   );
 }

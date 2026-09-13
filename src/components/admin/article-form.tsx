@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -18,16 +18,20 @@ import {
   Quote,
   Link as LinkIcon,
   Image as ImageIcon,
-  AlignLeft,
-  AlignCenter,
-  AlignJustify,
-  Undo,
-  Redo,
   Sparkles,
-  BookOpen
+  BookOpen,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
-import { dataService } from '@/lib/data-service';
 import { Article, Author, Category, Issue } from '@/types';
+import {
+  fetchCategories,
+  fetchAuthors,
+  fetchIssues,
+  saveArticle,
+  generateSlug
+} from '@/lib/cms-service';
+import { MediaPickerModal } from '@/components/admin/media-picker-modal';
 
 interface ArticleFormProps {
   initialArticle?: Article;
@@ -37,37 +41,101 @@ interface ArticleFormProps {
 export function ArticleForm({ initialArticle, isEditing = false }: ArticleFormProps) {
   const router = useRouter();
 
+  // Form Fields
   const [title, setTitle] = useState(initialArticle?.title || '');
-  const [slug, setSlug] = useState(
-    initialArticle?.slug || 'new-legal-article-analysis-tamil'
-  );
+  const [slug, setSlug] = useState(initialArticle?.slug || '');
   const [excerpt, setExcerpt] = useState(initialArticle?.excerpt || '');
   const [content, setContent] = useState(
     initialArticle?.content ||
       `## முன்னுரை\n\nஇங்கு உங்கள் கட்டுரையின் முன்னுரையை எழுதவும்...\n\n## சட்டக் கோட்பாடுகள்\n\nநீதிமன்றத் தீர்ப்புகள் மற்றும் சட்டப் பிரிவுகள் பற்றிய ஆய்வு...\n\n> "சட்டம் என்பது குடிமக்களின் உரிமைகளுக்கான கவசம்."\n\n## முடிவுரை\n\nமுடிவுரைக் கருத்துக்கள்...`
   );
   const [heroImage, setHeroImage] = useState(
-    initialArticle?.heroImage ||
+    initialArticle?.hero_image_url ||
+      initialArticle?.heroImage ||
       'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1200&auto=format&fit=crop&q=80'
   );
-  const [category, setCategory] = useState(initialArticle?.category || 'law');
-  const [authorId, setAuthorId] = useState(initialArticle?.author.id || 'auth-1');
-  const [tagsString, setTagsString] = useState(initialArticle?.tags?.join(', ') || 'சட்டம், தீர்ப்பு, நீதிமன்றம்');
-  const [status, setStatus] = useState<'published' | 'draft'>(initialArticle?.status || 'draft');
-  const [featured, setFeatured] = useState(initialArticle?.featured || false);
-  const [issueId, setIssueId] = useState(initialArticle?.issueId || 'issue-48');
-  const [pdfPage, setPdfPage] = useState(initialArticle?.pdfPage || 8);
-  const [readTimeMinutes, setReadTimeMinutes] = useState(initialArticle?.readTimeMinutes || 5);
+  const [heroMediaId, setHeroMediaId] = useState<string | undefined>(
+    initialArticle?.hero_media_id || undefined
+  );
+  const [categoryId, setCategoryId] = useState<string>(initialArticle?.category_id || '');
+  const [authorId, setAuthorId] = useState<string>(initialArticle?.author_id || '');
+  const [authorName, setAuthorName] = useState<string>(
+    initialArticle?.author_name || initialArticle?.author?.name || ''
+  );
+  const [tagsString, setTagsString] = useState(
+    initialArticle?.tags?.join(', ') || 'சட்டம், தீர்ப்பு, நீதிமன்றம்'
+  );
+  const [status, setStatus] = useState<'published' | 'draft'>((initialArticle?.status as any) || 'draft');
+  const [featured, setFeatured] = useState(Boolean(initialArticle?.featured));
+  const [issueId, setIssueId] = useState<string>(initialArticle?.issue_id || initialArticle?.issueId || '');
+  const [pdfPage, setPdfPage] = useState<number | string>(
+    initialArticle?.pdf_page ?? initialArticle?.pdfPage ?? ''
+  );
+  const [readTimeMinutes, setReadTimeMinutes] = useState<number>(
+    initialArticle?.read_time_minutes ?? initialArticle?.readTimeMinutes ?? 5
+  );
+
+  // Status & Dependencies
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [authors, setAuthors] = useState<Author[]>([]);
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [loadingDeps, setLoadingDeps] = useState(true);
 
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const authors = dataService.getAuthors();
-  const categories = dataService.getCategories();
-  const issues = dataService.getIssues();
+  // Load Categories, Authors, and Issues from Supabase
+  useEffect(() => {
+    async function loadDependencies() {
+      try {
+        setLoadingDeps(true);
+        const [catData, authData, issData] = await Promise.all([
+          fetchCategories(),
+          fetchAuthors(),
+          fetchIssues(),
+        ]);
+        setCategories(catData);
+        setAuthors(authData);
+        setIssues(issData);
 
-  // Toolbar action helper for textarea
+        // Set default category if creating new
+        if (!categoryId && catData.length > 0) {
+          if (initialArticle?.category) {
+            const matched = catData.find((c) => c.slug === initialArticle.category);
+            setCategoryId(matched ? matched.id : catData[0].id);
+          } else {
+            setCategoryId(catData[0].id);
+          }
+        }
+
+        // Set default author if creating new
+        if (!authorId && authData.length > 0) {
+          if (initialArticle?.author?.id && initialArticle.author.id !== 'unassigned') {
+            setAuthorId(initialArticle.author.id);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading article dependencies:', err);
+      } finally {
+        setLoadingDeps(false);
+      }
+    }
+    loadDependencies();
+  }, [initialArticle]);
+
+  // Auto generate slug from title if new and slug not manually edited
+  const handleTitleChange = (val: string) => {
+    setTitle(val);
+    if (!isEditing && (!slug || slug === generateSlug(title))) {
+      setSlug(generateSlug(val));
+    }
+  };
+
+  // Toolbar action helper for formatting
   const insertFormatting = (before: string, after: string = '') => {
     if (!textareaRef.current) return;
     const textarea = textareaRef.current;
@@ -83,43 +151,53 @@ export function ArticleForm({ initialArticle, isEditing = false }: ArticleFormPr
     }, 0);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
+    if (!title.trim()) {
+      setSaveError('கட்டுரை தலைப்பு கட்டாயமாகும்.');
+      return;
+    }
 
-    const author = authors.find((a) => a.id === authorId) || authors[0];
-    const catObj = categories.find((c) => c.slug === category);
-    const selectedIssue = issues.find((i) => i.id === issueId);
+    try {
+      setIsSaving(true);
+      setSaveError(null);
 
-    const articleToSave: Article = {
-      id: initialArticle?.id || `art-${Date.now()}`,
-      title,
-      slug,
-      excerpt,
-      content,
-      heroImage,
-      category,
-      categoryNameTamil: catObj?.nameTamil || 'சட்டம்',
-      author,
-      tags: tagsString.split(',').map((t) => t.trim()).filter(Boolean),
-      status,
-      featured,
-      publishedAt: initialArticle?.publishedAt || new Date().toISOString(),
-      readTimeMinutes: Number(readTimeMinutes),
-      issueId: issueId || undefined,
-      issueTitle: selectedIssue ? `${selectedIssue.month} ${selectedIssue.year} (இதழ் ${selectedIssue.issueNumber})` : undefined,
-      pdfPage: pdfPage ? Number(pdfPage) : undefined,
-    };
+      const selectedAuthor = authors.find((a) => a.id === authorId);
+      const parsedTags = tagsString
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
 
-    dataService.saveArticle(articleToSave);
+      await saveArticle({
+        id: initialArticle?.id,
+        title: title.trim(),
+        slug: slug.trim() || generateSlug(title),
+        excerpt: excerpt.trim(),
+        content,
+        hero_image_url: heroImage,
+        hero_media_id: heroMediaId,
+        category_id: categoryId || undefined,
+        author_id: authorId || undefined,
+        author_name: selectedAuthor?.name || authorName || 'ஆசிரியர் குழு',
+        issue_id: issueId || undefined,
+        featured,
+        pdf_page: pdfPage !== '' ? Number(pdfPage) : undefined,
+        read_time_minutes: Number(readTimeMinutes) || 5,
+        status,
+        published_at: initialArticle?.published_at || (status === 'published' ? new Date().toISOString() : null),
+        tags: parsedTags,
+      });
 
-    setTimeout(() => {
-      setIsSaving(false);
       setSavedSuccess(true);
       setTimeout(() => {
         router.push('/admin/articles');
-      }, 800);
-    }, 400);
+      }, 900);
+    } catch (err: any) {
+      console.error('Error saving article:', err);
+      setSaveError(err.message || 'கட்டுரையைச் சேமிக்க முடியவில்லை. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -129,7 +207,7 @@ export function ArticleForm({ initialArticle, isEditing = false }: ArticleFormPr
         <div className="flex items-center gap-3">
           <Link
             href="/admin/articles"
-            className="p-2 rounded-md border border-border bg-card text-muted-foreground hover:text-foreground"
+            className="p-2 rounded-md border border-border bg-card text-muted-foreground hover:text-foreground cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
@@ -138,14 +216,14 @@ export function ArticleForm({ initialArticle, isEditing = false }: ArticleFormPr
               {isEditing ? 'கட்டுரையைத் திருத்துதல்' : 'புதிய கட்டுரை எழுதுதல் (Article CMS Editor)'}
             </h1>
             <div className="text-xs text-muted-foreground">
-              தமிழ் யூனிகோட் மற்றும் TipTap ரிச்-டெக்ஸ்ட் ஆதரவு
+              தமிழ் யூனிகோட் & ரிச்-டெக்ஸ்ட் ஆதரவு (Supabase public.articles)
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           {savedSuccess && (
-            <span className="text-emerald-600 text-xs font-bold flex items-center gap-1">
+            <span className="text-emerald-600 text-xs font-bold flex items-center gap-1 animate-in fade-in">
               <CheckCircle className="w-4 h-4" />
               சேமிக்கப்பட்டது!
             </span>
@@ -153,162 +231,174 @@ export function ArticleForm({ initialArticle, isEditing = false }: ArticleFormPr
 
           <button
             type="submit"
-            disabled={isSaving}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-primary text-primary-foreground text-xs sm:text-sm font-bold hover:bg-primary/90 transition-colors shadow-xs disabled:opacity-50"
+            disabled={isSaving || loadingDeps}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-primary text-primary-foreground text-xs sm:text-sm font-bold hover:bg-primary/90 transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
           >
-            <Save className="w-4 h-4" />
-            <span>{isSaving ? 'சேமிக்கப்படுகிறது...' : 'கட்டுரையைச் சேமி (Save Article)'}</span>
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            <span>{isSaving ? 'சேமிக்கப்படுகிறது...' : isEditing ? 'மாற்றங்களைச் சேமி' : 'கட்டுரையைச் சேமி'}</span>
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Main Editor Column */}
-        <div className="lg:col-span-8 space-y-5">
-          <div className="bg-card border border-border rounded-lg p-5 shadow-2xs space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-foreground">
-                கட்டுரை தலைப்பு (Headline) <span className="text-destructive">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="எ.கா: அரசியல் சாசனத்தின் 75 ஆண்டுகள்: அடிப்படை உரிமைகள் எதிர்நோக்கும் சமகாலச் சவால்கள்"
-                value={title}
-                onChange={(e) => {
-                  setTitle(e.target.value);
-                  if (!isEditing) {
-                    setSlug(
-                      e.target.value
-                        .toLowerCase()
-                        .replace(/[^\w\s-]/g, '')
-                        .replace(/\s+/g, '-')
-                        .slice(0, 50) || 'article-slug'
-                    );
-                  }
-                }}
-                className="w-full px-3 py-2.5 rounded-md border border-border bg-background text-foreground text-base sm:text-lg font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
+      {saveError && (
+        <div className="p-3.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2 animate-in fade-in">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{saveError}</span>
+        </div>
+      )}
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-foreground">URL Slug</label>
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left/Main Column - Content & Writing Area */}
+        <div className="lg:col-span-8 space-y-5">
+          {/* Article Title */}
+          <div className="bg-card border border-border rounded-lg p-5 shadow-2xs space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              கட்டுரை தலைப்பு (Article Title) *
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="எ.கா: அரசியல் சாசனப் பிரிவு 21: தனிமனித சுதந்திரத்தின் புதிய பரிமாணங்கள்..."
+              value={title}
+              onChange={(e) => handleTitleChange(e.target.value)}
+              className="w-full text-lg sm:text-xl font-bold p-3 rounded-md border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+
+            {/* Slug row */}
+            <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground font-mono">
+              <span className="shrink-0 font-sans text-xs">URL Slug:</span>
+              <span className="text-muted-foreground/60 hidden sm:inline">/articles/</span>
               <input
                 type="text"
                 required
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
-                className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-xs font-sans focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-foreground">
-                சுருக்க உரை (Excerpt) <span className="text-destructive">*</span>
-              </label>
-              <textarea
-                rows={2}
-                required
-                placeholder="கட்டுரையின் முக்கிய மையக் கருத்தை 2-3 வரிகளில் சுருக்கமாகக் குறிப்பிடவும்..."
-                value={excerpt}
-                onChange={(e) => setExcerpt(e.target.value)}
-                className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-y"
+                className="flex-1 px-2.5 py-1 rounded-xs border border-border bg-background text-foreground text-xs font-mono"
+                placeholder="tamil-article-slug"
               />
             </div>
           </div>
 
-          {/* TipTap Compatible Rich Text Editor */}
+          {/* Excerpt */}
+          <div className="bg-card border border-border rounded-lg p-5 shadow-2xs space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              சுருக்கம் (Excerpt / Summary)
+            </label>
+            <textarea
+              rows={3}
+              value={excerpt}
+              onChange={(e) => setExcerpt(e.target.value)}
+              placeholder="கட்டுரையின் முக்கிய மையக் கருத்து மற்றும் வாசகர்களுக்கான சுருக்கக் குறிப்பு..."
+              className="w-full text-xs sm:text-sm p-3 rounded-md border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-y"
+            />
+          </div>
+
+          {/* Editorial Rich Text Editor Area */}
           <div className="bg-card border border-border rounded-lg shadow-2xs overflow-hidden">
-            {/* Toolbar */}
-            <div className="p-2 border-b border-border bg-muted/60 flex flex-wrap items-center gap-1 text-xs">
-              <button
-                type="button"
-                onClick={() => insertFormatting('## ')}
-                className="p-1.5 rounded-xs hover:bg-card border border-transparent hover:border-border text-foreground"
-                title="Heading 2"
-              >
-                <Heading2 className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => insertFormatting('### ')}
-                className="p-1.5 rounded-xs hover:bg-card border border-transparent hover:border-border text-foreground"
-                title="Heading 3"
-              >
-                <Heading3 className="w-4 h-4" />
-              </button>
-
-              <div className="w-px h-4 bg-border mx-1" />
-
+            {/* Formatting Toolbar */}
+            <div className="bg-muted/60 border-b border-border p-2 flex flex-wrap items-center gap-1 text-xs">
               <button
                 type="button"
                 onClick={() => insertFormatting('**', '**')}
-                className="p-1.5 rounded-xs hover:bg-card border border-transparent hover:border-border text-foreground"
-                title="Bold (தடிமன்)"
+                className="p-1.5 rounded-xs hover:bg-muted text-foreground cursor-pointer"
+                title="தடிமன் (Bold)"
               >
-                <Bold className="w-4 h-4" />
+                <Bold className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
                 onClick={() => insertFormatting('*', '*')}
-                className="p-1.5 rounded-xs hover:bg-card border border-transparent hover:border-border text-foreground"
-                title="Italic (சாய்வு)"
+                className="p-1.5 rounded-xs hover:bg-muted text-foreground cursor-pointer"
+                title="சாய்வு (Italic)"
               >
-                <Italic className="w-4 h-4" />
+                <Italic className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
                 onClick={() => insertFormatting('<u>', '</u>')}
-                className="p-1.5 rounded-xs hover:bg-card border border-transparent hover:border-border text-foreground"
-                title="Underline"
+                className="p-1.5 rounded-xs hover:bg-muted text-foreground cursor-pointer"
+                title="அடிக்கோடு (Underline)"
               >
-                <Underline className="w-4 h-4" />
+                <Underline className="w-3.5 h-3.5" />
               </button>
 
               <div className="w-px h-4 bg-border mx-1" />
 
               <button
                 type="button"
-                onClick={() => insertFormatting('\n* ')}
-                className="p-1.5 rounded-xs hover:bg-card border border-transparent hover:border-border text-foreground"
-                title="குறியீட்டுப் பட்டியல் (Bullet list)"
+                onClick={() => insertFormatting('\n## ', '\n')}
+                className="p-1.5 rounded-xs hover:bg-muted text-foreground cursor-pointer"
+                title="உபதலைப்பு 2 (Heading 2)"
               >
-                <List className="w-4 h-4" />
+                <Heading2 className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
-                onClick={() => insertFormatting('\n1. ')}
-                className="p-1.5 rounded-xs hover:bg-card border border-transparent hover:border-border text-foreground"
-                title="எண் பட்டியல் (Numbered list)"
+                onClick={() => insertFormatting('\n### ', '\n')}
+                className="p-1.5 rounded-xs hover:bg-muted text-foreground cursor-pointer"
+                title="உபதலைப்பு 3 (Heading 3)"
               >
-                <ListOrdered className="w-4 h-4" />
+                <Heading3 className="w-3.5 h-3.5" />
+              </button>
+
+              <div className="w-px h-4 bg-border mx-1" />
+
+              <button
+                type="button"
+                onClick={() => insertFormatting('\n- ', '\n')}
+                className="p-1.5 rounded-xs hover:bg-muted text-foreground cursor-pointer"
+                title="புல்லட் பட்டியல் (Bullet List)"
+              >
+                <List className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
-                onClick={() => insertFormatting('\n> ')}
-                className="p-1.5 rounded-xs hover:bg-card border border-transparent hover:border-border text-foreground"
+                onClick={() => insertFormatting('\n1. ', '\n')}
+                className="p-1.5 rounded-xs hover:bg-muted text-foreground cursor-pointer"
+                title="எண் பட்டியல் (Numbered List)"
+              >
+                <ListOrdered className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => insertFormatting('\n> "', '"\n')}
+                className="p-1.5 rounded-xs hover:bg-muted text-foreground cursor-pointer"
                 title="மேற்கோள் (Quote)"
               >
-                <Quote className="w-4 h-4" />
+                <Quote className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => insertFormatting('\n---\n')}
+                className="px-2 py-1 rounded-xs hover:bg-muted text-foreground text-[11px] font-bold cursor-pointer"
+                title="கிடைமட்டக் கோடு (Divider)"
+              >
+                HR
               </button>
 
               <div className="w-px h-4 bg-border mx-1" />
 
               <button
                 type="button"
-                onClick={() => insertFormatting('[இணைப்பு உரை](', ')') }
-                className="p-1.5 rounded-xs hover:bg-card border border-transparent hover:border-border text-foreground"
-                title="இணைய இணைப்பு (Link)"
+                onClick={() => {
+                  const url = prompt('இணைப்பு முகவரியை (URL) உள்ளிடவும்:');
+                  if (url) insertFormatting(`[`, `](${url})`);
+                }}
+                className="p-1.5 rounded-xs hover:bg-muted text-foreground cursor-pointer"
+                title="இணைப்பு (Link)"
               >
-                <LinkIcon className="w-4 h-4" />
+                <LinkIcon className="w-3.5 h-3.5" />
               </button>
+
               <button
                 type="button"
-                onClick={() => insertFormatting('![பட விளக்கம்](', ')') }
-                className="p-1.5 rounded-xs hover:bg-card border border-transparent hover:border-border text-foreground"
-                title="படம் இணைக்க"
+                onClick={() => setShowMediaPicker(true)}
+                className="p-1.5 rounded-xs hover:bg-muted text-primary cursor-pointer flex items-center gap-1"
+                title="மீடியா படம் சேர்க்க"
               >
-                <ImageIcon className="w-4 h-4" />
+                <ImageIcon className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-bold">மீடியா</span>
               </button>
             </div>
 
@@ -316,12 +406,12 @@ export function ArticleForm({ initialArticle, isEditing = false }: ArticleFormPr
             <div className="p-4">
               <textarea
                 ref={textareaRef}
-                rows={16}
+                rows={18}
                 required
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="கட்டுரை உள்ளடக்கத்தை இங்கு எழுதவும்..."
-                className="w-full bg-background text-foreground text-sm sm:text-base leading-relaxed font-tamil focus:outline-none resize-y p-3 border border-border rounded-md"
+                placeholder="கட்டுரை உள்ளடக்கத்தை இங்கு விரிவாக எழுதவும்..."
+                className="w-full bg-background text-foreground text-sm sm:text-base leading-relaxed font-tamil focus:outline-none resize-y p-3 border border-border rounded-md font-sans"
               />
             </div>
           </div>
@@ -332,46 +422,51 @@ export function ArticleForm({ initialArticle, isEditing = false }: ArticleFormPr
           {/* Publishing settings */}
           <div className="bg-card border border-border rounded-lg p-5 shadow-2xs space-y-4">
             <h3 className="text-sm font-bold text-foreground border-b border-border pb-2">
-              வெளியீட்டு மேலாண்மை
+              வெளியீட்டு மேலாண்மை (Publishing)
             </h3>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-foreground">நிலை (Status)</label>
+              <label className="text-xs font-bold text-foreground">நிலை (Status) *</label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as 'published' | 'draft')}
                 className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                <option value="draft">வரைவு (Draft - மறைக்கப்பட்டது)</option>
+                <option value="draft">வரைவு (Draft - பிரசுரிக்கப்படாதது)</option>
                 <option value="published">வெளியிடப்பட்டது (Published - நேரலை)</option>
               </select>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-foreground">பிரிவு (Category)</label>
+              <label className="text-xs font-bold text-foreground">பிரிவு (Category) *</label>
               <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
                 className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 {categories.map((c) => (
-                  <option key={c.id} value={c.slug}>
-                    {c.nameTamil} ({c.nameEnglish})
+                  <option key={c.id} value={c.id}>
+                    {c.name} ({c.name_en || c.slug})
                   </option>
                 ))}
               </select>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-foreground">கட்டுரையாளர் (Author)</label>
+              <label className="text-xs font-bold text-foreground">கட்டுரையாளர் (Author) *</label>
               <select
                 value={authorId}
-                onChange={(e) => setAuthorId(e.target.value)}
+                onChange={(e) => {
+                  setAuthorId(e.target.value);
+                  const selected = authors.find((a) => a.id === e.target.value);
+                  if (selected) setAuthorName(selected.name);
+                }}
                 className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
+                <option value="">ஆசிரியர் குழு (Editorial Desk)</option>
                 {authors.map((a) => (
                   <option key={a.id} value={a.id}>
-                    {a.name} - {a.role}
+                    {a.name} ({a.role})
                   </option>
                 ))}
               </select>
@@ -383,17 +478,19 @@ export function ArticleForm({ initialArticle, isEditing = false }: ArticleFormPr
                 id="featured-check"
                 checked={featured}
                 onChange={(e) => setFeatured(e.target.checked)}
-                className="rounded-xs border-border text-primary focus:ring-primary w-4 h-4"
+                className="rounded-xs border-border text-primary focus:ring-primary w-4 h-4 cursor-pointer"
               />
-              <label htmlFor="featured-check" className="text-xs font-bold text-foreground cursor-pointer">
-                முகப்பு சிறப்புக் கட்டுரையாகக் காட்டு (Featured Article)
+              <label htmlFor="featured-check" className="text-xs font-bold text-foreground cursor-pointer flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-primary" />
+                <span>முகப்பு சிறப்புக் கட்டுரை (Featured)</span>
               </label>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-foreground">வாசிப்பு நேரம் (நிமிடங்களில்)</label>
+              <label className="text-xs font-bold text-foreground">வாசிப்பு நேரம் (Read Time in Mins)</label>
               <input
                 type="number"
+                min={1}
                 value={readTimeMinutes}
                 onChange={(e) => setReadTimeMinutes(Number(e.target.value))}
                 className="w-full px-3 py-1.5 rounded-md border border-border bg-background text-foreground text-xs font-mono"
@@ -415,22 +512,22 @@ export function ArticleForm({ initialArticle, isEditing = false }: ArticleFormPr
                 onChange={(e) => setIssueId(e.target.value)}
                 className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-xs focus:outline-none"
               >
-                <option value="">இதழ் இல்லை (இணையதளம் மட்டுமே)</option>
+                <option value="">இதழ் இல்லை (இணையதளப் பிரசுரம் மட்டுமே)</option>
                 {issues.map((i) => (
                   <option key={i.id} value={i.id}>
-                    இதழ் {i.issueNumber} ({i.month} {i.year})
+                    {i.title || `இதழ் ${i.issue_number || i.issueNumber}`} ({i.month || ''} {i.year || ''})
                   </option>
                 ))}
               </select>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-foreground">PDF பக்க எண்</label>
+              <label className="text-xs font-bold text-foreground">PDF பக்க எண் (Page No)</label>
               <input
                 type="number"
                 placeholder="எ.கா: 8"
                 value={pdfPage}
-                onChange={(e) => setPdfPage(Number(e.target.value))}
+                onChange={(e) => setPdfPage(e.target.value ? Number(e.target.value) : '')}
                 className="w-full px-3 py-1.5 rounded-md border border-border bg-background text-foreground text-xs font-mono"
               />
             </div>
@@ -438,37 +535,50 @@ export function ArticleForm({ initialArticle, isEditing = false }: ArticleFormPr
 
           {/* Hero Image */}
           <div className="bg-card border border-border rounded-lg p-5 shadow-2xs space-y-3">
-            <h3 className="text-sm font-bold text-foreground border-b border-border pb-2">
-              முக்கியப் படம் (Hero Image - Cloudinary Ready)
+            <h3 className="text-sm font-bold text-foreground border-b border-border pb-2 flex items-center justify-between">
+              <span>முக்கியப் படம் (Hero Image)</span>
+              <button
+                type="button"
+                onClick={() => setShowMediaPicker(true)}
+                className="text-xs text-primary hover:underline font-bold flex items-center gap-1 cursor-pointer"
+              >
+                <UploadCloud className="w-3.5 h-3.5" />
+                <span>நூலகத்திலிருந்து தேர்வு</span>
+              </button>
             </h3>
 
             {heroImage && (
-              <div className="aspect-16/10 rounded-md overflow-hidden border border-border bg-muted">
-                <img src={heroImage} alt="Preview" className="w-full h-full object-cover" />
+              <div className="aspect-16/10 rounded-md overflow-hidden border border-border bg-muted relative group">
+                <img src={heroImage} alt="Hero Preview" className="w-full h-full object-cover" />
               </div>
             )}
 
             <input
               type="url"
               value={heroImage}
-              onChange={(e) => setHeroImage(e.target.value)}
+              onChange={(e) => {
+                setHeroImage(e.target.value);
+                setHeroMediaId(undefined);
+              }}
               className="w-full px-2.5 py-1.5 rounded-xs border border-border bg-background text-foreground text-xs font-sans"
-              placeholder="https://..."
+              placeholder="https://images.unsplash.com/..."
             />
 
             <button
               type="button"
-              onClick={() => alert('Cloudinary மீடியா பதிவேற்றம் விரைவில் இணைக்கப்படும்.')}
-              className="w-full py-2 px-3 rounded-md border border-dashed border-border hover:bg-muted text-xs font-bold text-primary flex items-center justify-center gap-1.5"
+              onClick={() => setShowMediaPicker(true)}
+              className="w-full py-2 px-3 rounded-md border border-dashed border-border hover:bg-muted text-xs font-bold text-primary flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <UploadCloud className="w-4 h-4" />
-              <span>படத்தை மாற்றுக / பதிவேற்று</span>
+              <span>படத்தைத் தேர்வுசெய் / பதிவேற்று</span>
             </button>
           </div>
 
           {/* Tags */}
           <div className="bg-card border border-border rounded-lg p-5 shadow-2xs space-y-2">
-            <label className="text-xs font-bold text-foreground">குறிச்சொற்கள் (Tags - கமாவால் பிரிக்கவும்)</label>
+            <label className="text-xs font-bold text-foreground">
+              குறிச்சொற்கள் (Tags - கமாவால் பிரிக்கவும்)
+            </label>
             <input
               type="text"
               value={tagsString}
@@ -476,9 +586,24 @@ export function ArticleForm({ initialArticle, isEditing = false }: ArticleFormPr
               className="w-full px-3 py-1.5 rounded-md border border-border bg-background text-foreground text-xs"
               placeholder="அரசியல் சாசனம், உச்ச நீதிமன்றம், அடிப்படை உரிமை"
             />
+            <p className="text-[11px] text-muted-foreground">
+              குறிச்சொற்கள் தானாகவே `public.tags` மற்றும் `public.article_tags`-ல் ஒத்திசைக்கப்படும்.
+            </p>
           </div>
         </div>
       </div>
+
+      {/* Media Picker Modal */}
+      <MediaPickerModal
+        isOpen={showMediaPicker}
+        onClose={() => setShowMediaPicker(false)}
+        onSelect={(media) => {
+          setHeroImage(media.url);
+          if (media.mediaId) setHeroMediaId(media.mediaId);
+        }}
+        title="கட்டுரை முக்கியப் படத்தைத் தேர்ந்தெடுக்கவும் (Select Hero Image)"
+        categoryFilter="article"
+      />
     </form>
   );
 }
