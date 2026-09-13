@@ -247,6 +247,9 @@ export interface Media {
   type?: 'image' | 'pdf' | string;
   size?: string;
   altText?: string;
+  source?: 'Local Upload' | 'Google Drive' | 'Existing Library' | string;
+  usageCount?: number;
+  usedBy?: { type: 'article' | 'issue' | 'author'; title: string; id: string }[];
 }
 
 export interface AdminUser {

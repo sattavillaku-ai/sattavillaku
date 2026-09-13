@@ -17,6 +17,7 @@ import {
   FileCheck,
   AlertCircle,
   Sparkles,
+  HardDrive,
 } from 'lucide-react';
 import { Issue, TableOfContentItem, IssueStatus } from '@/types';
 import { saveIssue, generateSlug } from '@/lib/cms-service';
@@ -140,6 +141,50 @@ export function IssueForm({ initialIssue, isEditing = false }: IssueFormProps) {
     } finally {
       setIsUploadingPdf(false);
       if (pdfInputRef.current) pdfInputRef.current.value = '';
+    }
+  };
+
+  // Google Drive PDF Import Handler
+  const handleDrivePdfImport = async (driveFileId: string, driveFileName: string, accessToken: string) => {
+    if (!driveFileId || !accessToken) {
+      setUploadPdfError('கூகுள் டிரைவ் கோப்பு ஐடி மற்றும் டோக்கன் தேவை.');
+      return;
+    }
+
+    setIsUploadingPdf(true);
+    setUploadPdfError('');
+    setUploadPdfSuccess('');
+
+    try {
+      const res = await fetch('/api/admin/issues/pdf/google-drive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileId: driveFileId,
+          fileName: driveFileName || `issue-${issueNumber}.pdf`,
+          accessToken,
+          issueNumber: issueNumber.toString(),
+          year: year.toString(),
+          oldPdfUrl: pdfUrl,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'கூகுள் டிரைவிலிருந்து PDF இறக்குமதி தோல்வியடைந்தது.');
+      }
+
+      setPdfUrl(data.pdfUrl);
+      if (data.pageCount) {
+        setPageCount(data.pageCount);
+      }
+      setUploadPdfSuccess(`கூகுள் டிரைவிலிருந்து PDF வெற்றிகரமாக நகலெடுக்கப்பட்டது! (${data.pageCount ? `${data.pageCount} பக்கங்கள்` : data.fileName})`);
+    } catch (err: any) {
+      console.error('Drive PDF import error:', err);
+      setUploadPdfError(err.message || 'கூகுள் டிரைவ் PDF இறக்குமதியில் பிழை ஏற்பட்டது.');
+    } finally {
+      setIsUploadingPdf(false);
     }
   };
 
@@ -577,24 +622,42 @@ export function IssueForm({ initialIssue, isEditing = false }: IssueFormProps) {
               onChange={handlePdfFileSelect}
             />
 
-            <button
-              type="button"
-              disabled={isUploadingPdf}
-              onClick={() => pdfInputRef.current?.click()}
-              className="w-full py-2 px-3 rounded-md border border-dashed border-border hover:bg-muted text-xs font-bold text-primary flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-            >
-              {isUploadingPdf ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>PDF பதிவேற்றப்படுகிறது...</span>
-                </>
-              ) : (
-                <>
-                  <FileUp className="w-4 h-4" />
-                  <span>{pdfUrl ? 'புதிய PDF கோப்பை மாற்று (Replace)' : 'PDF ஆவணம் பதிவேற்று'}</span>
-                </>
-              )}
-            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled={isUploadingPdf}
+                onClick={() => pdfInputRef.current?.click()}
+                className="py-2 px-3 rounded-md border border-dashed border-border hover:bg-muted text-xs font-bold text-primary flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {isUploadingPdf ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>பதிவேற்றப்படுகிறது...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileUp className="w-4 h-4" />
+                    <span>கணினியிலிருந்து PDF</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                disabled={isUploadingPdf}
+                onClick={() => {
+                  const driveId = prompt('Google Drive PDF கோப்பு ஐடியை (File ID) உள்ளிடவும்:');
+                  if (!driveId) return;
+                  const token = prompt('Google OAuth Access Token உள்ளிடவும்:');
+                  if (!token) return;
+                  handleDrivePdfImport(driveId, `issue-${issueNumber}.pdf`, token);
+                }}
+                className="py-2 px-3 rounded-md border border-dashed border-border hover:bg-muted text-xs font-bold text-primary flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <HardDrive className="w-4 h-4" />
+                <span>Google Drive PDF இறக்குமதி</span>
+              </button>
+            </div>
 
             <div className="space-y-1">
               <label className="text-[11px] text-muted-foreground">அல்லது Storage பாதை / நேரடி URL:</label>

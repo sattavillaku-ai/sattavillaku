@@ -66,17 +66,26 @@ export default function ArticlesPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
       {/* Header */}
-      <div className="border-b-2 border-primary pb-4">
-        <div className="flex items-center gap-2 text-primary text-xs font-bold uppercase tracking-wider mb-1">
-          <Newspaper className="w-4 h-4" />
-          <span>சட்டவிளக்கு கட்டுரைக் களஞ்சியம்</span>
+      <div className="border-b-2 border-primary pb-4 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-primary text-xs font-bold uppercase tracking-wider mb-1">
+            <Newspaper className="w-4 h-4" />
+            <span>சட்டவிளக்கு கட்டுரைக் களஞ்சியம்</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold font-tamil text-foreground">
+            ஆய்வுக் கட்டுரைகள் (Articles & Analysis)
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1 font-tamil max-w-3xl leading-relaxed">
+            சட்டம், அரசியலமைப்பு, நீதிமன்றத் தீர்ப்புகள், மற்றும் சமூகம் குறித்த நடுநிலையான சட்ட வல்லுநர்களின் ஆய்வுக் கட்டுரைகள்.
+          </p>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold font-tamil text-foreground">
-          ஆய்வுக் கட்டுரைகள் (Articles & Analysis)
-        </h1>
-        <p className="text-sm sm:text-base text-muted-foreground mt-1 font-tamil max-w-3xl leading-relaxed">
-          சட்டம், அரசியலமைப்பு, நீதிமன்றத் தீர்ப்புகள், மற்றும் சமூகம் குறித்த நடுநிலையான சட்ட வல்லுநர்களின் ஆய்வுக் கட்டுரைகள்.
-        </p>
+
+        <Link
+          href="/archive"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-border bg-card hover:bg-muted text-xs font-bold text-foreground transition-colors shrink-0"
+        >
+          <span>வரலாற்று காப்பகம் (Archive) &rarr;</span>
+        </Link>
       </div>
 
       {/* Featured Spotlight (only on page 1 without filters) */}

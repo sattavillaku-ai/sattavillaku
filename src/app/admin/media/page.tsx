@@ -11,7 +11,10 @@ import {
   Eye,
   X,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  HardDrive,
+  ShieldAlert,
+  Info
 } from 'lucide-react';
 import { Media } from '@/types';
 import { fetchMediaList, deleteMediaRecord } from '@/lib/cms-service';
@@ -21,20 +24,27 @@ export default function AdminMediaPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedSource, setSelectedSource] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [previewMedia, setPreviewMedia] = useState<Media | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [usageModalMedia, setUsageModalMedia] = useState<Media | null>(null);
 
-  // Upload modal state
-  const [uploadMode, setUploadMode] = useState<'file' | 'url'>('file');
+  // Upload modal state: file / drive / url
+  const [uploadMode, setUploadMode] = useState<'file' | 'drive' | 'url'>('file');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [newUrl, setNewUrl] = useState('');
+  const [driveFileId, setDriveFileId] = useState('');
+  const [driveFileName, setDriveFileName] = useState('');
+  const [driveToken, setDriveToken] = useState('');
   const [newCategory, setNewCategory] = useState<'article' | 'cover' | 'author' | 'site'>('article');
   const [newAltText, setNewAltText] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [possibleDuplicate, setPossibleDuplicate] = useState<Media | null>(null);
 
   const loadMedia = async () => {
     try {
@@ -65,8 +75,14 @@ export default function AdminMediaPage() {
   };
 
   const handleDelete = async (media: Media) => {
+    // Check usage first
+    if (media.usageCount && media.usageCount > 0) {
+      setUsageModalMedia(media);
+      return;
+    }
+
     const confirmed = window.confirm(
-      `"${media.name}" கோப்பை நிச்சயமாக நீக்க வேண்டுமா?\n\nகவனிக்க: கட்டுரைகளில் இந்த படம் பயன்படுத்தப்பட்டிருந்தால் அது பாதிக்கப்படலாம்.`
+      `"${media.name}" படத்தை நிச்சயமாக நீக்க வேண்டுமா?\n\nகவனிக்க: இந்த படம் தற்போது எந்த கட்டுரை அல்லது இதழிலும் பயன்பாட்டில் இல்லை.`
     );
     if (!confirmed) return;
 
@@ -78,47 +94,103 @@ export default function AdminMediaPage() {
     }
   };
 
-  const handleSaveUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFileSelection = (file: File | null) => {
+    setUploadFile(file);
+    setPossibleDuplicate(null);
+    if (!file) {
+      setUploadPreview(null);
+      return;
+    }
+    setUploadPreview(URL.createObjectURL(file));
+    const baseName = file.name.replace(/\.[^/.]+$/, '');
+    if (!newName) setNewName(baseName);
+    if (!newAltText) setNewAltText(baseName);
+
+    // Duplicate detection
+    const dup = mediaList.find((m) => m.name.toLowerCase() === baseName.toLowerCase());
+    if (dup) {
+      setPossibleDuplicate(dup);
+    }
+  };
+
+  const handleSaveUpload = async (e: React.FormEvent, force = false) => {
+    if (e) e.preventDefault();
     try {
       setIsUploading(true);
       setUploadError(null);
 
-      const formData = new FormData();
-      if (uploadMode === 'file') {
-        if (!uploadFile) {
-          setUploadError('தயவுசெய்து ஒரு படக் கோப்பைத் தேர்ந்தெடுக்கவும்.');
+      if (uploadMode === 'drive') {
+        if (!driveFileId.trim() || !driveToken.trim()) {
+          setUploadError('கூகுள் டிரைவ் கோப்பு ஐடி மற்றும் அனுமதி டோக்கன் கட்டாயமாகும்.');
+          setIsUploading(false);
           return;
         }
-        formData.append('file', uploadFile);
+
+        const res = await fetch('/api/admin/media/google-drive', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileId: driveFileId.trim(),
+            fileName: driveFileName.trim() || newName.trim() || 'google-drive-image.jpg',
+            mimeType: 'image/jpeg',
+            accessToken: driveToken.trim(),
+            altText: newAltText.trim() || newName.trim(),
+            category: newCategory,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'கூகுள் டிரைவிலிருந்து இறக்குமதி செய்ய இயலவில்லை.');
+        }
       } else {
-        if (!newUrl.trim()) {
-          setUploadError('தயவுசெய்து படத்தின் URL-ஐ உள்ளிடவும்.');
-          return;
+        const formData = new FormData();
+        if (uploadMode === 'file') {
+          if (!uploadFile) {
+            setUploadError('தயவுசெய்து ஒரு படக் கோப்பைத் தேர்ந்தெடுக்கவும்.');
+            setIsUploading(false);
+            return;
+          }
+          if (possibleDuplicate && !force) {
+            setIsUploading(false);
+            return;
+          }
+          formData.append('file', uploadFile);
+        } else {
+          if (!newUrl.trim()) {
+            setUploadError('தயவுசெய்து படத்தின் URL-ஐ உள்ளிடவும்.');
+            setIsUploading(false);
+            return;
+          }
+          formData.append('url', newUrl.trim());
         }
-        formData.append('url', newUrl.trim());
-      }
 
-      formData.append('name', newName || uploadFile?.name || 'media-item');
-      formData.append('category', newCategory);
-      formData.append('alt_text', newAltText || newName || 'media item');
+        formData.append('name', newName || uploadFile?.name || 'media-item');
+        formData.append('category', newCategory);
+        formData.append('alt_text', newAltText || newName || 'media item');
 
-      const res = await fetch('/api/admin/media/upload', {
-        method: 'POST',
-        body: formData,
-      });
+        const res = await fetch('/api/admin/media/upload', {
+          method: 'POST',
+          body: formData,
+        });
 
-      const data = await res.json();
+        const data = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'மீடியா பதிவேற்றம் தோல்வியடைந்தது.');
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'மீடியா பதிவேற்றம் தோல்வியடைந்தது.');
+        }
       }
 
       setShowUploadModal(false);
       setUploadFile(null);
+      setUploadPreview(null);
       setNewName('');
       setNewUrl('');
+      setDriveFileId('');
+      setDriveFileName('');
+      setDriveToken('');
       setNewAltText('');
+      setPossibleDuplicate(null);
       await loadMedia();
     } catch (err: any) {
       setUploadError(err.message || 'பதிவேற்றத்தில் பிழை.');
@@ -129,12 +201,19 @@ export default function AdminMediaPage() {
 
   const filtered = mediaList.filter((m) => {
     const term = searchQuery.trim().toLowerCase();
-    if (!term) return true;
-    return (
+    const matchesSearch =
+      !term ||
       m.name.toLowerCase().includes(term) ||
       (m.alt_text && m.alt_text.toLowerCase().includes(term)) ||
-      (m.altText && m.altText.toLowerCase().includes(term))
-    );
+      (m.source && m.source.toLowerCase().includes(term));
+
+    const matchesSource =
+      selectedSource === 'all' ||
+      (selectedSource === 'local' && m.source === 'Local Upload') ||
+      (selectedSource === 'drive' && m.source === 'Google Drive') ||
+      (selectedSource === 'imported' && m.source !== 'Local Upload');
+
+    return matchesSearch && matchesSource;
   });
 
   return (
@@ -147,7 +226,7 @@ export default function AdminMediaPage() {
             <span>மீடியா நூலகம் (Media Library)</span>
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            கட்டுரைப் படங்கள், அட்டைப்படங்கள் மற்றும் புகைப்படங்கள் (Cloudinary & Supabase public.media)
+            கட்டுரைப் படங்கள், அட்டைப்படங்கள், புகைப்படங்கள் (கணினி & கூகுள் டிரைவ் நேரடி இறக்குமதி ஆதரவு)
           </p>
         </div>
 
@@ -160,7 +239,7 @@ export default function AdminMediaPage() {
           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-colors shadow-xs cursor-pointer"
         >
           <UploadCloud className="w-4 h-4" />
-          <span>புதிய படம் பதிவேற்று (Upload Media)</span>
+          <span>புதிய படம் பதிவேற்று / இறக்குமதி</span>
         </button>
       </div>
 
@@ -171,12 +250,12 @@ export default function AdminMediaPage() {
         </div>
       )}
 
-      {/* Filter and Search */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card border border-border p-3 rounded-md shadow-2xs">
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-card border border-border p-3.5 rounded-md shadow-2xs">
         <div className="relative flex-1">
           <input
             type="text"
-            placeholder="படத்தின் பெயர் அல்லது விளக்கம் கொண்டு தேட..."
+            placeholder="படத்தின் பெயர், விளக்கம், மூலம் கொண்டு தேட..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-8 pr-3 py-1.5 rounded-md border border-border bg-background text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-primary"
@@ -184,27 +263,42 @@ export default function AdminMediaPage() {
           <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto text-xs font-semibold">
-          {[
-            { id: 'all', label: 'அனைத்தும்' },
-            { id: 'article', label: 'கட்டுரைப் படங்கள்' },
-            { id: 'cover', label: 'இதழ் அட்டைப்படங்கள்' },
-            { id: 'author', label: 'எழுத்தாளர் படங்கள்' },
-            { id: 'site', label: 'தள முத்திரைகள்' },
-          ].map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`px-3 py-1.5 rounded-xs transition-colors whitespace-nowrap cursor-pointer ${
-                selectedCategory === cat.id
-                  ? 'bg-primary text-primary-foreground font-bold'
-                  : 'bg-muted text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Source filter */}
+          <select
+            value={selectedSource}
+            onChange={(e) => setSelectedSource(e.target.value)}
+            className="px-2.5 py-1.5 rounded-md border border-border bg-background text-foreground text-xs focus:outline-none"
+          >
+            <option value="all">அனைத்து மூலங்கள்</option>
+            <option value="local">கணினி பதிவேற்றங்கள் (Local)</option>
+            <option value="drive">கூகுள் டிரைவ் (Google Drive)</option>
+            <option value="imported">இறக்குமதி செய்யப்பட்டவை</option>
+          </select>
+
+          {/* Category filter */}
+          <div className="flex items-center gap-1 overflow-x-auto text-xs font-semibold">
+            {[
+              { id: 'all', label: 'அனைத்தும்' },
+              { id: 'article', label: 'கட்டுரைப் படங்கள்' },
+              { id: 'cover', label: 'இதழ் அட்டைப்படங்கள்' },
+              { id: 'author', label: 'எழுத்தாளர் படங்கள்' },
+              { id: 'site', label: 'தள முத்திரைகள்' },
+            ].map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`px-3 py-1.5 rounded-xs transition-colors whitespace-nowrap cursor-pointer ${
+                  selectedCategory === cat.id
+                    ? 'bg-primary text-primary-foreground font-bold'
+                    : 'bg-muted text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -222,9 +316,9 @@ export default function AdminMediaPage() {
           <ImageIcon className="w-10 h-10 mx-auto text-muted-foreground/40" />
           <p className="text-sm font-bold text-foreground">மீடியா கோப்புகள் எதுவும் இல்லை.</p>
           <p className="text-xs">
-            {searchQuery
+            {searchQuery || selectedSource !== 'all' || selectedCategory !== 'all'
               ? 'உங்கள் தேடலுக்கு ஏற்ப படங்கள் எதுவும் கிடைக்கவில்லை.'
-              : 'நூலகத்தில் படங்கள் எதுவும் பதிவு செய்யப்படவில்லை. "புதிய படம் பதிவேற்று" பொத்தானைப் பயன்படுத்தி முதல் படத்தைச் சேர்க்கவும்.'}
+              : 'நூலகத்தில் படங்கள் எதுவும் பதிவு செய்யப்படவில்லை. "புதிய படம் பதிவேற்று" பொத்தானைப் பயன்படுத்தி படங்களைச் சேர்க்கவும்.'}
           </p>
           <button
             type="button"
@@ -252,6 +346,44 @@ export default function AdminMediaPage() {
                   alt={item.alt_text || item.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
+
+                {/* Source Badge */}
+                <div className="absolute top-2 left-2">
+                  <span className="px-1.5 py-0.5 rounded-xs text-[10px] font-bold bg-black/70 text-white backdrop-blur-xs flex items-center gap-1">
+                    {item.source === 'Google Drive' ? (
+                      <>
+                        <HardDrive className="w-2.5 h-2.5 text-primary" />
+                        <span>Google Drive</span>
+                      </>
+                    ) : (
+                      <>
+                        <UploadCloud className="w-2.5 h-2.5 text-emerald-400" />
+                        <span>Local</span>
+                      </>
+                    )}
+                  </span>
+                </div>
+
+                {/* Usage Count Badge */}
+                {typeof item.usageCount === 'number' && (
+                  <div className="absolute top-2 right-2">
+                    <span
+                      onClick={() => {
+                        if (item.usageCount && item.usageCount > 0) {
+                          setUsageModalMedia(item);
+                        }
+                      }}
+                      className={`px-1.5 py-0.5 rounded-xs text-[10px] font-bold backdrop-blur-xs cursor-pointer ${
+                        item.usageCount > 0
+                          ? 'bg-emerald-600/90 text-white hover:bg-emerald-700'
+                          : 'bg-muted/80 text-muted-foreground'
+                      }`}
+                      title={item.usageCount > 0 ? 'பயன்படுத்தப்பட்டுள்ள இடங்களைப் பார்' : 'பயன்பாட்டில் இல்லை'}
+                    >
+                      {item.usageCount > 0 ? `Used (${item.usageCount})` : 'Unused'}
+                    </span>
+                  </div>
+                )}
 
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                   <button
@@ -282,11 +414,18 @@ export default function AdminMediaPage() {
                 <div className="font-bold text-foreground truncate" title={item.name}>
                   {item.name}
                 </div>
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                {item.alt_text && (
+                  <div className="text-[10px] text-muted-foreground truncate" title={item.alt_text}>
+                    Alt: {item.alt_text}
+                  </div>
+                )}
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1">
                   <span className="uppercase tracking-wider font-mono font-semibold">
                     {item.category}
                   </span>
-                  <span>{item.size || (item.size_bytes ? `${(item.size_bytes / (1024 * 1024)).toFixed(1)} MB` : 'படம்')}</span>
+                  <span>
+                    {item.size || (item.size_bytes ? `${(item.size_bytes / (1024 * 1024)).toFixed(1)} MB` : 'படம்')}
+                  </span>
                 </div>
               </div>
 
@@ -313,8 +452,16 @@ export default function AdminMediaPage() {
                 <button
                   type="button"
                   onClick={() => handleDelete(item)}
-                  className="p-1 rounded-xs hover:bg-destructive/10 text-muted-foreground hover:text-destructive cursor-pointer"
-                  title="நீக்கு"
+                  className={`p-1 rounded-xs cursor-pointer ${
+                    item.usageCount && item.usageCount > 0
+                      ? 'text-muted-foreground/50 hover:text-amber-600'
+                      : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
+                  }`}
+                  title={
+                    item.usageCount && item.usageCount > 0
+                      ? 'பயன்பாட்டில் உள்ள படம் - நீக்க இயலாது'
+                      : 'படத்தை நீக்கு'
+                  }
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -324,13 +471,62 @@ export default function AdminMediaPage() {
         </div>
       )}
 
+      {/* Usage Warning Modal */}
+      {usageModalMedia && (
+        <div
+          onClick={() => setUsageModalMedia(null)}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-card border border-border rounded-lg max-w-md w-full p-5 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 font-tamil"
+          >
+            <div className="flex items-center gap-2 text-amber-600 border-b border-border pb-3">
+              <ShieldAlert className="w-5 h-5" />
+              <h3 className="font-bold text-foreground">பயன்பாட்டில் உள்ள படம் (In-Use Media)</h3>
+            </div>
+
+            <p className="text-xs text-foreground leading-relaxed">
+              &quot;<strong>{usageModalMedia.name}</strong>&quot; என்ற படம் தற்போது{' '}
+              <strong>{usageModalMedia.usageCount}</strong> உருப்படிகளில் பயன்படுத்தப்படுவதால் இதை பாதுகாப்பாக நீக்க முடியாது:
+            </p>
+
+            <div className="max-h-48 overflow-y-auto space-y-1.5 p-2 bg-muted/40 rounded-md border border-border text-xs">
+              {usageModalMedia.usedBy && usageModalMedia.usedBy.length > 0 ? (
+                usageModalMedia.usedBy.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between gap-2 p-1.5 bg-background rounded-xs border border-border/50">
+                    <span className="font-semibold text-foreground truncate">{item.title}</span>
+                    <span className="text-[10px] text-primary uppercase font-mono shrink-0">
+                      {item.type}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-muted-foreground text-xs p-1">தொடர்புடைய இணைப்புகள் கண்டறியப்பட்டன.</div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setUsageModalMedia(null)}
+                className="px-4 py-1.5 bg-primary text-primary-foreground font-bold rounded-md text-xs cursor-pointer"
+              >
+                சரி (OK)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-lg max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+          <div className="bg-card border border-border rounded-lg max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 font-tamil">
             <div className="flex items-center justify-between border-b border-border pb-3">
-              <h3 className="text-base font-bold text-foreground">
-                புதிய படம் பதிவேற்று (Upload Media)
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <UploadCloud className="w-5 h-5 text-primary" />
+                <span>புதிய படம் சேர்க்க (Add Media)</span>
               </h3>
               <button
                 type="button"
@@ -348,49 +544,106 @@ export default function AdminMediaPage() {
               </div>
             )}
 
-            {/* Switch Mode: File / URL */}
-            <div className="flex rounded-md border border-border overflow-hidden text-xs font-bold">
+            {/* Switch Mode: File / Google Drive / URL */}
+            <div className="flex rounded-md border border-border overflow-hidden text-xs font-bold bg-muted/40">
               <button
                 type="button"
                 onClick={() => setUploadMode('file')}
-                className={`flex-1 py-1.5 text-center cursor-pointer ${
-                  uploadMode === 'file' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                className={`flex-1 py-2 text-center cursor-pointer flex items-center justify-center gap-1 ${
+                  uploadMode === 'file' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                கோப்புப் பதிவேற்றம் (File)
+                <UploadCloud className="w-3.5 h-3.5" />
+                <span>கணினி (Computer)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setUploadMode('drive')}
+                className={`flex-1 py-2 text-center cursor-pointer flex items-center justify-center gap-1 ${
+                  uploadMode === 'drive' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <HardDrive className="w-3.5 h-3.5" />
+                <span>கூகுள் டிரைவ்</span>
               </button>
               <button
                 type="button"
                 onClick={() => setUploadMode('url')}
-                className={`flex-1 py-1.5 text-center cursor-pointer ${
-                  uploadMode === 'url' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                className={`flex-1 py-2 text-center cursor-pointer flex items-center justify-center gap-1 ${
+                  uploadMode === 'url' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                நேரடி URL (External Link)
+                <span>நேரடி URL</span>
               </button>
             </div>
 
-            <form onSubmit={handleSaveUpload} className="space-y-3.5 text-xs font-tamil">
-              {uploadMode === 'file' ? (
+            {possibleDuplicate && uploadMode === 'file' && (
+              <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 rounded-md text-xs space-y-1.5">
+                <div className="flex items-center gap-1.5 font-bold">
+                  <Info className="w-4 h-4 shrink-0 text-amber-600" />
+                  <span>இந்த படம் ஏற்கனவே நூலகத்தில் இருக்கலாம்</span>
+                </div>
+                <p className="text-[11px]">
+                  &quot;{possibleDuplicate.name}&quot; என்ற பெயரில் ஏற்கனவே ஒரு கோப்பு உள்ளது.
+                </p>
+                <button
+                  type="button"
+                  onClick={(e) => handleSaveUpload(e, true)}
+                  className="px-3 py-1 bg-amber-600 text-white font-bold rounded-xs text-[11px] cursor-pointer"
+                >
+                  இருப்பினும் புதியதாகப் பதிவேற்று
+                </button>
+              </div>
+            )}
+
+            <form onSubmit={(e) => handleSaveUpload(e, false)} className="space-y-3.5 text-xs">
+              {uploadMode === 'file' && (
                 <div className="space-y-1.5">
                   <label className="font-bold text-foreground">படக் கோப்பு *</label>
                   <input
                     type="file"
                     required
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setUploadFile(file);
-                        if (!newName) {
-                          setNewName(file.name.replace(/\.[^/.]+$/, ''));
-                        }
-                      }
-                    }}
+                    accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                    onChange={(e) => handleFileSelection(e.target.files?.[0] || null)}
                     className="w-full p-2 rounded-md border border-border bg-background text-foreground text-xs file:mr-3 file:py-1 file:px-3 file:rounded-xs file:border-0 file:text-xs file:font-bold file:bg-primary file:text-primary-foreground cursor-pointer"
                   />
+                  {uploadPreview && (
+                    <div className="aspect-16/9 max-h-36 rounded-md overflow-hidden border border-border bg-muted">
+                      <img src={uploadPreview} alt="Preview" className="w-full h-full object-contain" />
+                    </div>
+                  )}
                 </div>
-              ) : (
+              )}
+
+              {uploadMode === 'drive' && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-foreground">Google Drive File ID *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="1A2b3C4d5E6F7G8h..."
+                      value={driveFileId}
+                      onChange={(e) => setDriveFileId(e.target.value)}
+                      className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground font-mono text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-foreground">OAuth Access Token *</label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="ya29.a0AfH6SM..."
+                      value={driveToken}
+                      onChange={(e) => setDriveToken(e.target.value)}
+                      className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground font-mono text-xs"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {uploadMode === 'url' && (
                 <div className="space-y-1.5">
                   <label className="font-bold text-foreground">படத்தின் நேரடி URL *</label>
                   <input
@@ -444,17 +697,17 @@ export default function AdminMediaPage() {
                 <button
                   type="button"
                   onClick={() => setShowUploadModal(false)}
-                  className="px-3 py-1.5 rounded-md border border-border hover:bg-muted cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-md border border-border hover:bg-muted cursor-pointer"
                 >
                   ரத்து
                 </button>
                 <button
                   type="submit"
-                  disabled={isUploading || (uploadMode === 'file' && !uploadFile) || (uploadMode === 'url' && !newUrl)}
+                  disabled={isUploading}
                   className="px-4 py-1.5 rounded-md bg-primary text-primary-foreground font-bold hover:bg-primary/90 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
                 >
                   {isUploading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>{isUploading ? 'பதிவேற்றப்படுகிறது...' : 'சேமி (Save Media)'}</span>
+                  <span>{isUploading ? 'சேமிக்கப்படுகிறது...' : 'சேமி (Save Media)'}</span>
                 </button>
               </div>
             </form>
@@ -494,12 +747,12 @@ export default function AdminMediaPage() {
               </div>
               <div className="pt-2 border-t border-border flex items-center justify-between">
                 <span className="text-muted-foreground uppercase text-[10px]">
-                  வகை: {previewMedia.category}
+                  வகை: {previewMedia.category} • மூலம்: {previewMedia.source || 'Media Library'}
                 </span>
                 <button
                   type="button"
                   onClick={() => handleCopyUrl(previewMedia)}
-                  className="px-3 py-1 bg-primary text-primary-foreground rounded-xs font-bold flex items-center gap-1"
+                  className="px-3 py-1 bg-primary text-primary-foreground rounded-xs font-bold flex items-center gap-1 cursor-pointer"
                 >
                   <Copy className="w-3 h-3" />
                   <span>URL நகலெடு</span>

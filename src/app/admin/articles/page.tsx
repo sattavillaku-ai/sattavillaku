@@ -34,6 +34,7 @@ export default function AdminArticlesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedSort, setSelectedSort] = useState<'published_at' | 'created_at' | 'views' | 'oldest' | 'updated_at'>('published_at');
   const [notification, setNotification] = useState<string | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
@@ -46,6 +47,7 @@ export default function AdminArticlesPage() {
           status: selectedStatus,
           categoryId: selectedCategory,
           search: searchQuery,
+          sortBy: selectedSort,
         }),
         fetchCategories(),
       ]);
@@ -61,7 +63,7 @@ export default function AdminArticlesPage() {
 
   useEffect(() => {
     loadData();
-  }, [selectedStatus, selectedCategory]);
+  }, [selectedStatus, selectedCategory, selectedSort]);
 
   // Debounced search
   useEffect(() => {
@@ -184,6 +186,17 @@ export default function AdminArticlesPage() {
             <option value="published">வெளியிடப்பட்டவை</option>
             <option value="draft">வரைவுகள்</option>
           </select>
+
+          <select
+            value={selectedSort}
+            onChange={(e) => setSelectedSort(e.target.value as any)}
+            className="px-2.5 py-1.5 rounded-md border border-border bg-background text-foreground text-xs focus:outline-none"
+          >
+            <option value="published_at">புதியது முதலில் (Newest)</option>
+            <option value="oldest">பழையது முதலில் (Oldest)</option>
+            <option value="views">அதிகம் வாசிக்கப்பட்டவை (Most Viewed)</option>
+            <option value="updated_at">சமீபத்தில் புதுப்பிக்கப்பட்டவை</option>
+          </select>
         </div>
       </div>
 
@@ -226,6 +239,7 @@ export default function AdminArticlesPage() {
                   <th className="p-3.5">தலைப்பு & பிரிவு</th>
                   <th className="p-3.5">எழுத்தாளர்</th>
                   <th className="p-3.5">தேதி</th>
+                  <th className="p-3.5">பார்வைகள்</th>
                   <th className="p-3.5">நிலை</th>
                   <th className="p-3.5 text-right">செயல்கள்</th>
                 </tr>
@@ -277,6 +291,9 @@ export default function AdminArticlesPage() {
                           <Calendar className="w-3 h-3" />
                           <span>{formatDateTamil(article.published_at || article.created_at || '')}</span>
                         </div>
+                      </td>
+                      <td className="p-3.5 text-muted-foreground whitespace-nowrap text-[11px] font-mono">
+                        {(article.views || 0).toLocaleString()}
                       </td>
                       <td className="p-3.5 whitespace-nowrap">
                         <StatusBadge status={article.status} />

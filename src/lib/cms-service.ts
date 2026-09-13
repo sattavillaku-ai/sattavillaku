@@ -417,7 +417,14 @@ export async function deleteTag(id: string, client?: SupabaseClient): Promise<vo
    ========================================================= */
 
 export async function fetchArticles(
-  options?: { status?: string; categoryId?: string; search?: string; limit?: number; offset?: number },
+  options?: {
+    status?: string;
+    categoryId?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+    sortBy?: 'published_at' | 'created_at' | 'views' | 'oldest' | 'updated_at';
+  },
   client?: SupabaseClient
 ): Promise<Article[]> {
   const supabase = getClient(client);
@@ -432,8 +439,21 @@ export async function fetchArticles(
       article_tags (
         tag:tag_id ( id, name, slug )
       )
-    `)
-    .order('created_at', { ascending: false });
+    `);
+
+  // Sorting
+  if (options?.sortBy === 'views') {
+    query = query.order('views', { ascending: false }).order('published_at', { ascending: false });
+  } else if (options?.sortBy === 'oldest') {
+    query = query.order('published_at', { ascending: true, nullsFirst: false });
+  } else if (options?.sortBy === 'updated_at') {
+    query = query.order('updated_at', { ascending: false });
+  } else if (options?.sortBy === 'created_at') {
+    query = query.order('created_at', { ascending: false });
+  } else {
+    // Default publication freshness: published_at DESC, then created_at DESC
+    query = query.order('published_at', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
+  }
 
   if (options?.status && options.status !== 'all') {
     query = query.eq('status', options.status);
@@ -1311,25 +1331,87 @@ export async function fetchMediaList(category?: string, client?: SupabaseClient)
     return [];
   }
 
-  return (data || []).map((m) => ({
-    id: m.id,
-    name: m.name,
-    url: m.url,
-    public_id: m.public_id,
-    category: m.category,
-    mime_type: m.mime_type,
-    size_bytes: m.size_bytes,
-    width: m.width,
-    height: m.height,
-    alt_text: m.alt_text,
-    created_by: m.created_by,
-    created_at: m.created_at,
-    updated_at: m.updated_at,
-    // UI compatibility
-    type: m.mime_type?.includes('pdf') ? 'pdf' : 'image',
-    size: m.size_bytes ? `${(m.size_bytes / (1024 * 1024)).toFixed(1)} MB` : '1.2 MB',
-    altText: m.alt_text || m.name,
-  }));
+  const mediaItems = data || [];
+
+  // Parallel usage discovery from articles, issues, and authors
+  let usageMap = new Map<string, { count: number; items: { type: 'article' | 'issue' | 'author'; title: string; id: string }[] }>();
+
+  try {
+    const [articlesRes, issuesRes, authorsRes] = await Promise.all([
+      supabase.from('articles').select('id, title, hero_image_url, image_url, hero_media_id'),
+      supabase.from('issues').select('id, title, cover_image_url'),
+      supabase.from('authors').select('id, name, photo_url'),
+    ]);
+
+    const articles = articlesRes.data || [];
+    const issues = issuesRes.data || [];
+    const authors = authorsRes.data || [];
+
+    for (const m of mediaItems) {
+      const uses: { type: 'article' | 'issue' | 'author'; title: string; id: string }[] = [];
+
+      // Check articles
+      articles.forEach((art) => {
+        if (
+          art.hero_media_id === m.id ||
+          (art.hero_image_url && art.hero_image_url === m.url) ||
+          (art.image_url && art.image_url === m.url)
+        ) {
+          uses.push({ type: 'article', title: art.title, id: art.id });
+        }
+      });
+
+      // Check issues
+      issues.forEach((iss) => {
+        if (iss.cover_image_url && iss.cover_image_url === m.url) {
+          uses.push({ type: 'issue', title: iss.title, id: iss.id });
+        }
+      });
+
+      // Check authors
+      authors.forEach((auth) => {
+        if (auth.photo_url && auth.photo_url === m.url) {
+          uses.push({ type: 'author', title: auth.name, id: auth.id });
+        }
+      });
+
+      usageMap.set(m.id, { count: uses.length, items: uses });
+    }
+  } catch (err) {
+    console.warn('Could not calculate media usages:', err);
+  }
+
+  return mediaItems.map((m) => {
+    const usage = usageMap.get(m.id);
+    const inferredSource = m.public_id?.includes('drive')
+      ? 'Google Drive'
+      : m.url?.includes('cloudinary')
+      ? 'Local Upload'
+      : 'Existing Library';
+
+    return {
+      id: m.id,
+      name: m.name,
+      url: m.url,
+      public_id: m.public_id,
+      category: m.category,
+      mime_type: m.mime_type,
+      size_bytes: m.size_bytes,
+      width: m.width,
+      height: m.height,
+      alt_text: m.alt_text,
+      created_by: m.created_by,
+      created_at: m.created_at,
+      updated_at: m.updated_at,
+      // UI compatibility
+      type: m.mime_type?.includes('pdf') ? 'pdf' : 'image',
+      size: m.size_bytes ? `${(m.size_bytes / (1024 * 1024)).toFixed(1)} MB` : '1.2 MB',
+      altText: m.alt_text || m.name,
+      source: inferredSource,
+      usageCount: usage?.count || 0,
+      usedBy: usage?.items || [],
+    };
+  });
 }
 
 export async function createMediaRecord(
@@ -1392,11 +1474,48 @@ export async function createMediaRecord(
     type: data.mime_type?.includes('pdf') ? 'pdf' : 'image',
     size: data.size_bytes ? `${(data.size_bytes / (1024 * 1024)).toFixed(1)} MB` : '1.0 MB',
     altText: data.alt_text || data.name,
+    source: data.public_id?.includes('drive') ? 'Google Drive' : 'Local Upload',
+    usageCount: 0,
+    usedBy: [],
   };
 }
 
 export async function deleteMediaRecord(id: string, client?: SupabaseClient): Promise<void> {
   const supabase = getClient(client);
+
+  // 1. Verify media exists
+  const { data: media, error: fetchErr } = await supabase
+    .from('media')
+    .select('id, name, url, public_id')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (fetchErr || !media) {
+    throw new Error('மீடியா பதிவு காணப்படவில்லை.');
+  }
+
+  // 2. Enforce Usage Safety: check if in use
+  const [artCount, issCount, authCount] = await Promise.all([
+    supabase
+      .from('articles')
+      .select('id', { count: 'exact', head: true })
+      .or(`hero_media_id.eq.${id},hero_image_url.eq.${media.url},image_url.eq.${media.url}`),
+    supabase
+      .from('issues')
+      .select('id', { count: 'exact', head: true })
+      .eq('cover_image_url', media.url),
+    supabase
+      .from('authors')
+      .select('id', { count: 'exact', head: true })
+      .eq('photo_url', media.url),
+  ]);
+
+  const totalUsed = (artCount.count || 0) + (issCount.count || 0) + (authCount.count || 0);
+  if (totalUsed > 0) {
+    throw new Error(`இந்தப் படம் தற்போது ${totalUsed} உருப்படிகளில் பயன்படுத்தப்படுவதால் இதை நீக்க முடியாது.`);
+  }
+
+  // 3. Delete from public.media
   const { error } = await supabase.from('media').delete().eq('id', id);
 
   if (error) {

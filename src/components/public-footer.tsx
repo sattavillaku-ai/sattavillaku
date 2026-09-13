@@ -94,6 +94,11 @@ export function PublicFooter() {
                   சிறப்புக் கட்டுரைகள்
                 </Link>
               </li>
+              <li>
+                <Link href="/archive" className="hover:text-primary transition-colors">
+                  கட்டுரை வரலாற்று காப்பகம்
+                </Link>
+              </li>
             </ul>
           </div>
 
