@@ -100,12 +100,31 @@ export async function POST(request: Request) {
 
     const storagePath = `${year}/issue-${issueNumber}/${Date.now()}-${cleanFilename}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from('magazines')
+    const primaryBucket = process.env.SUPABASE_MAGAZINE_BUCKET || 'premium-pdfs';
+    let chosenBucket = primaryBucket;
+
+    let { error: uploadError } = await supabase.storage
+      .from(primaryBucket)
       .upload(storagePath, buffer, {
         contentType: 'application/pdf',
         upsert: true,
       });
+
+    // Fallback if primary bucket not found
+    if (uploadError && uploadError.message?.toLowerCase().includes('bucket not found')) {
+      const fallbackBucket = primaryBucket === 'premium-pdfs' ? 'magazines' : 'premium-pdfs';
+      const fallbackResult = await supabase.storage
+        .from(fallbackBucket)
+        .upload(storagePath, buffer, {
+          contentType: 'application/pdf',
+          upsert: true,
+        });
+
+      if (!fallbackResult.error) {
+        uploadError = null;
+        chosenBucket = fallbackBucket;
+      }
+    }
 
     if (uploadError) {
       console.error('Supabase Storage PDF upload error from Drive:', uploadError.message);
@@ -118,8 +137,8 @@ export async function POST(request: Request) {
     // Clean old superseded PDF if present
     if (oldPdfUrl && !oldPdfUrl.startsWith('http') && oldPdfUrl !== storagePath) {
       try {
-        const cleanOldPath = oldPdfUrl.replace(/^magazines\//, '');
-        await supabase.storage.from('magazines').remove([cleanOldPath]);
+        const cleanOldPath = oldPdfUrl.replace(/^(magazines|premium-pdfs)\//, '');
+        await supabase.storage.from(chosenBucket).remove([cleanOldPath]);
       } catch (cleanErr) {
         console.warn('Could not delete old PDF from storage:', cleanErr);
       }

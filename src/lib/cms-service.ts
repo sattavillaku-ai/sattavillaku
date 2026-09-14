@@ -2210,63 +2210,87 @@ export async function fetchPublishedPublicNews(
 ): Promise<NewsItem[]> {
   const supabase = getClient(client);
 
-  // Query published articles from public.articles
-  let query = supabase
-    .from('articles')
-    .select('*, categories (*)')
-    .eq('status', 'published')
-    .order('published_at', { ascending: false });
-
-  if (options?.limit) {
-    query = query.limit(options.limit);
-  }
-
-  const { data: articles, error } = await query;
-
-  if (error || !articles || articles.length === 0) {
-    // Fallback query from news_items marked as published
+  try {
+    // 1. Fetch live news items from public.news_items
     let newsQuery = supabase
       .from('news_items')
       .select('*')
-      .eq('status', 'published')
+      .in('status', ['published', 'collected'])
       .order('published_at', { ascending: false });
 
     if (options?.categorySlug && options.categorySlug !== 'all') {
-      newsQuery = newsQuery.eq('category_slug', options.categorySlug);
+      newsQuery = newsQuery.or(`category_slug.eq.${options.categorySlug},category.eq.${options.categorySlug}`);
     }
+
     if (options?.limit) {
       newsQuery = newsQuery.limit(options.limit);
     }
 
-    const { data: newsItems } = await newsQuery;
-    if (newsItems && newsItems.length > 0) {
-      return newsItems.map(mapNewsItemRow);
+    const { data: newsItems, error: newsErr } = await newsQuery;
+    if (newsErr) {
+      console.warn('Warning querying news_items:', newsErr.message);
     }
+
+    // 2. Fetch published articles from public.articles with correct relation syntax
+    let articlesQuery = supabase
+      .from('articles')
+      .select('*, category:category_id ( id, name, name_en, slug )')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false });
+
+    if (options?.limit) {
+      articlesQuery = articlesQuery.limit(options.limit);
+    }
+
+    const { data: articles, error: artErr } = await articlesQuery;
+    if (artErr) {
+      console.warn('Warning querying articles in fetchPublishedPublicNews:', artErr.message);
+    }
+
+    const mappedArticles: NewsItem[] = (articles || [])
+      .filter((a) => {
+        if (!options?.categorySlug || options.categorySlug === 'all') return true;
+        return a.category?.slug === options.categorySlug;
+      })
+      .map((a) => ({
+        id: a.id,
+        source: 'சட்டவிளக்கு தலையங்கம்',
+        sourceUrl: `/articles/${a.slug}`,
+        headline: a.title,
+        originalHeadline: a.title,
+        originalContent: a.content,
+        summary: a.excerpt || (a.content ? a.content.slice(0, 200) : ''),
+        content: a.content,
+        category: a.category?.slug || 'law',
+        category_slug: a.category?.slug || 'law',
+        categoryNameTamil: a.category?.name || 'சட்டம்',
+        publishedAt: a.published_at || a.created_at || new Date().toISOString(),
+        published_at: a.published_at || a.created_at || new Date().toISOString(),
+        imageUrl: a.hero_image_url || a.image_url || undefined,
+        relevanceScore: 95,
+        relevance_score: 95,
+        status: 'published',
+        tags: Array.isArray(a.tags) ? a.tags : [],
+      }));
+
+    const mappedNewsItems: NewsItem[] = (newsItems || []).map(mapNewsItemRow);
+
+    // Merge both, sorted newest published first
+    const combined = [...mappedNewsItems, ...mappedArticles].sort((a, b) => {
+      const dateA = new Date(a.published_at || a.publishedAt || 0).getTime();
+      const dateB = new Date(b.published_at || b.publishedAt || 0).getTime();
+      return dateB - dateA;
+    });
+
+    if (combined.length > 0) {
+      return options?.limit && options.limit > 0 ? combined.slice(0, options.limit) : combined;
+    }
+
+    return [];
+  } catch (err: any) {
+    console.error('Error fetching published public news:', err);
     return [];
   }
-
-  // Filter by category if requested
-  const filtered = options?.categorySlug && options.categorySlug !== 'all'
-    ? articles.filter((a) => a.categories?.slug === options.categorySlug)
-    : articles;
-
-  return filtered.map((a) => ({
-    id: a.id,
-    source: 'சட்டவிளக்கு',
-    sourceUrl: `/articles/${a.slug}`,
-    headline: a.title,
-    originalHeadline: a.title,
-    originalContent: a.content,
-    summary: a.excerpt || a.content.slice(0, 200),
-    content: a.content,
-    category: a.categories?.slug || 'law',
-    categoryNameTamil: a.categories?.name || 'சட்டம்',
-    publishedAt: a.published_at || a.created_at || new Date().toISOString(),
-    imageUrl: a.hero_image_url || undefined,
-    relevanceScore: 90,
-    status: 'published',
-    tags: Array.isArray(a.tags) ? a.tags : [],
-  }));
 }
 
 export async function fetchRelatedContentForArticle(

@@ -79,35 +79,29 @@ export async function GET(request: Request) {
     }
 
     // Storage path in private Supabase Storage
-    const cleanPath = targetPath.replace(/^magazines\//, '');
+    const cleanPath = targetPath.replace(/^(magazines|premium-pdfs|magazine-assets)\//, '');
+    const candidateBuckets = [
+      process.env.SUPABASE_MAGAZINE_BUCKET,
+      'premium-pdfs',
+      'magazines',
+      'magazine-assets',
+    ].filter(Boolean) as string[];
 
-    // 1. Try 'magazines' bucket first
-    const { data: signedData, error: signedError } = await supabase.storage
-      .from('magazines')
-      .createSignedUrl(cleanPath, 3600); // 1 hour temporary access
+    for (const bName of candidateBuckets) {
+      const { data: signedData } = await supabase.storage
+        .from(bName)
+        .createSignedUrl(cleanPath, 3600); // 1 hour temporary access
 
-    if (signedData?.signedUrl) {
-      return NextResponse.json({
-        url: signedData.signedUrl,
-        title: issueTitle,
-        pageCount: issuePageCount,
-      });
+      if (signedData?.signedUrl) {
+        return NextResponse.json({
+          url: signedData.signedUrl,
+          title: issueTitle,
+          pageCount: issuePageCount,
+        });
+      }
     }
 
-    // 2. Fallback to 'magazine-assets' bucket for legacy uploaded files
-    const { data: fallbackData } = await supabase.storage
-      .from('magazine-assets')
-      .createSignedUrl(cleanPath, 3600);
-
-    if (fallbackData?.signedUrl) {
-      return NextResponse.json({
-        url: fallbackData.signedUrl,
-        title: issueTitle,
-        pageCount: issuePageCount,
-      });
-    }
-
-    console.warn('Could not generate signed URL for path:', cleanPath, signedError?.message);
+    console.warn('Could not generate signed URL for path across buckets:', cleanPath);
     return NextResponse.json(
       { error: 'PDF கோப்பைப் பெற முடியவில்லை. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.' },
       { status: 404 }

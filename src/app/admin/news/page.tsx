@@ -40,6 +40,7 @@ import {
   toggleNewsSourceActive,
   deleteNewsSource,
   deleteNewsItem,
+  updateNewsItem,
   seedDefaultSources,
 } from '@/lib/cms-service';
 import { StatusBadge } from '@/components/status-badge';
@@ -301,6 +302,24 @@ export default function AdminNewsPage() {
       showToast('செய்தி நீக்கப்பட்டது.');
     } catch (err: any) {
       showToast(err.message || 'செய்தியை நீக்க முடியவில்லை.', 'error');
+    }
+  };
+
+  // Quick Toggle Publish / Live
+  const handleTogglePublish = async (item: NewsItem) => {
+    try {
+      const nextStatus = item.status === 'published' ? 'review' : 'published';
+      await updateNewsItem(item.id, { status: nextStatus });
+      setItems((prev) =>
+        prev.map((it) => (it.id === item.id ? { ...it, status: nextStatus } : it))
+      );
+      showToast(
+        nextStatus === 'published'
+          ? 'செய்தி நேரலையில் வெளியிடப்பட்டது!'
+          : 'செய்தி ஆய்வுக்கு மாற்றப்பட்டது.'
+      );
+    } catch (err: any) {
+      showToast(err.message || 'செய்தி நிலையை மாற்ற முடியவில்லை.', 'error');
     }
   };
 
@@ -677,6 +696,23 @@ export default function AdminNewsPage() {
 
                           {/* Actions */}
                           <td className="p-3.5 text-right whitespace-nowrap align-top space-x-1.5">
+                            <button
+                              onClick={() => handleTogglePublish(item)}
+                              className={`px-2 py-1 rounded-md text-[11px] font-bold cursor-pointer inline-flex items-center gap-1 border transition-colors ${
+                                item.status === 'published'
+                                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20'
+                                  : 'border-primary/30 bg-primary/10 text-primary hover:bg-primary/20'
+                              }`}
+                              title={
+                                item.status === 'published'
+                                  ? 'வெளியீட்டை ரத்து செய்'
+                                  : 'உடனடியாக இணையதளத்தில் நேரலை செய்'
+                              }
+                            >
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>{item.status === 'published' ? 'நேரலை' : 'வெளியிடு'}</span>
+                            </button>
+
                             <button
                               onClick={() => handleGenerateDraft(item.id)}
                               disabled={isGeneratingDraft}

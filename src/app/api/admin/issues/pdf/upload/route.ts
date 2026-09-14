@@ -98,13 +98,32 @@ export async function POST(request: Request) {
     // Architecture: magazines/{year}/issue-{issueNumber}/{timestamp}-{filename}
     const storagePath = `${year}/issue-${issueNumber}/${Date.now()}-${cleanFilename}`;
 
-    // 5. Upload to Supabase Storage private bucket 'magazines'
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('magazines')
+    // 5. Upload to Supabase Storage private bucket ('premium-pdfs' or 'magazines')
+    const primaryBucket = process.env.SUPABASE_MAGAZINE_BUCKET || 'premium-pdfs';
+    let chosenBucket = primaryBucket;
+
+    let { data: uploadData, error: uploadError } = await supabase.storage
+      .from(primaryBucket)
       .upload(storagePath, buffer, {
         contentType: 'application/pdf',
         upsert: true,
       });
+
+    // Fallback if primary bucket not found
+    if (uploadError && uploadError.message?.toLowerCase().includes('bucket not found')) {
+      const fallbackBucket = primaryBucket === 'premium-pdfs' ? 'magazines' : 'premium-pdfs';
+      const fallbackResult = await supabase.storage
+        .from(fallbackBucket)
+        .upload(storagePath, buffer, {
+          contentType: 'application/pdf',
+          upsert: true,
+        });
+
+      if (!fallbackResult.error) {
+        uploadError = null;
+        chosenBucket = fallbackBucket;
+      }
+    }
 
     if (uploadError) {
       console.error('Supabase Storage PDF upload error:', uploadError.message);
@@ -117,8 +136,8 @@ export async function POST(request: Request) {
     // 6. Safe replacement cleanup: only after successful upload, delete old file if it was in storage
     if (oldPdfUrl && !oldPdfUrl.startsWith('http') && oldPdfUrl !== storagePath) {
       try {
-        const cleanOldPath = oldPdfUrl.replace(/^magazines\//, '');
-        await supabase.storage.from('magazines').remove([cleanOldPath]);
+        const cleanOldPath = oldPdfUrl.replace(/^(magazines|premium-pdfs)\//, '');
+        await supabase.storage.from(chosenBucket).remove([cleanOldPath]);
       } catch (cleanErr) {
         console.warn('Could not delete superseded PDF from storage:', cleanErr);
       }
