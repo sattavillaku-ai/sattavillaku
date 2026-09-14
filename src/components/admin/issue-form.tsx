@@ -135,6 +135,16 @@ export function IssueForm({ initialIssue, isEditing = false }: IssueFormProps) {
         setPageCount(data.pageCount);
       }
       setUploadPdfSuccess(`PDF வெற்றிகரமாகப் பதிவேற்றப்பட்டது! (${data.pageCount ? `${data.pageCount} பக்கங்கள்` : file.name})`);
+
+      // Prompt admin to choose/upload cover image for this magazine
+      setTimeout(() => {
+        const wantCover = window.confirm(
+          `இதழ் PDF வெற்றிகரமாகப் பதிவேற்றப்பட்டது (${data.pageCount ? `${data.pageCount} பக்கங்கள்` : file.name})!\n\nதற்போது இந்த இதழுக்கான அட்டைப்படத்தைத் (Cover Image) தேர்ந்தெடுக்க விரும்புகிறீர்களா?`
+        );
+        if (wantCover) {
+          setShowMediaPicker(true);
+        }
+      }, 500);
     } catch (err: any) {
       console.error('PDF upload error:', err);
       setUploadPdfError(err.message || 'PDF பதிவேற்றத்தில் பிழை ஏற்பட்டது.');
@@ -180,6 +190,16 @@ export function IssueForm({ initialIssue, isEditing = false }: IssueFormProps) {
         setPageCount(data.pageCount);
       }
       setUploadPdfSuccess(`கூகுள் டிரைவிலிருந்து PDF வெற்றிகரமாக நகலெடுக்கப்பட்டது! (${data.pageCount ? `${data.pageCount} பக்கங்கள்` : data.fileName})`);
+
+      // Prompt admin to choose/upload cover image for this magazine
+      setTimeout(() => {
+        const wantCover = window.confirm(
+          `கூகுள் டிரைவ் PDF வெற்றிகரமாக நகலெடுக்கப்பட்டது (${data.pageCount ? `${data.pageCount} பக்கங்கள்` : data.fileName})!\n\nதற்போது இந்த இதழுக்கான அட்டைப்படத்தைத் (Cover Image) தேர்ந்தெடுக்க விரும்புகிறீர்களா?`
+        );
+        if (wantCover) {
+          setShowMediaPicker(true);
+        }
+      }, 500);
     } catch (err: any) {
       console.error('Drive PDF import error:', err);
       setUploadPdfError(err.message || 'கூகுள் டிரைவ் PDF இறக்குமதியில் பிழை ஏற்பட்டது.');
@@ -677,6 +697,8 @@ export function IssueForm({ initialIssue, isEditing = false }: IssueFormProps) {
       <MediaPickerModal
         isOpen={showMediaPicker}
         onClose={() => setShowMediaPicker(false)}
+        title="இதழ் அட்டைப்படத்தைத் தேர்ந்தெடுக்கவும் (Select Magazine Cover Image)"
+        categoryFilter="cover"
         onSelect={(media) => {
           setCoverUrl(media.url);
           setShowMediaPicker(false);
