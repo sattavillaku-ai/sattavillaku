@@ -69,7 +69,7 @@ export default function HomePage() {
           if (pubNews.length > 0) {
             setNews(pubNews);
           } else {
-            setNews(dataService.getPublishedNews());
+            setNews([]);
           }
         }
       } catch (err) {
@@ -79,7 +79,7 @@ export default function HomePage() {
           setCurrentIssue(curr);
           setPreviousIssues(dataService.getIssues().filter((i) => i.id !== curr.id));
           setArticles(dataService.getPublishedArticles());
-          setNews(dataService.getPublishedNews());
+          setNews([]);
         }
       }
     }

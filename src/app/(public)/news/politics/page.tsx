@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Landmark, ArrowLeft, Filter } from 'lucide-react';
-import { dataService } from '@/lib/data-service';
 import { fetchPublishedPublicNews } from '@/lib/cms-service';
 import { NewsItem } from '@/types';
 import { NewsCard } from '@/components/news-card';
@@ -18,15 +17,11 @@ export default function PoliticsNewsPage() {
       try {
         const realNews = await fetchPublishedPublicNews({ categorySlug: 'politics' });
         if (isMounted) {
-          if (realNews && realNews.length > 0) {
-            setPoliticsNews(realNews);
-          } else {
-            setPoliticsNews(dataService.getNewsByCategory('politics'));
-          }
+          setPoliticsNews(realNews || []);
         }
       } catch (err) {
         console.error('Error fetching published politics news:', err);
-        if (isMounted) setPoliticsNews(dataService.getNewsByCategory('politics'));
+        if (isMounted) setPoliticsNews([]);
       }
     }
     load();

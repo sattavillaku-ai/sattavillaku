@@ -1705,7 +1705,7 @@ export async function seedDefaultSources(client?: SupabaseClient): Promise<NewsS
     },
     {
       name: 'LiveLaw (Courts & Verdicts)',
-      feed_url: 'https://www.livelaw.in/rss/all-news.xml',
+      feed_url: 'https://www.livelaw.in/category/top-stories/feed',
       source_type: 'rss',
       category: 'law',
       region: 'India',
@@ -1908,7 +1908,12 @@ export async function updateNewsItem(
 
   if (updates.category !== undefined) payload.category = updates.category;
   if (updates.category_slug !== undefined) payload.category_slug = updates.category_slug;
-  if (updates.status !== undefined) payload.status = updates.status;
+  if (updates.status !== undefined) {
+    payload.status = updates.status;
+    if (updates.status === 'published') {
+      payload.published_at = updates.published_at || updates.publishedAt || new Date().toISOString();
+    }
+  }
   if (updates.relevance_score !== undefined) payload.relevance_score = updates.relevance_score;
   if (updates.relevanceScore !== undefined) payload.relevance_score = updates.relevanceScore;
 
@@ -2211,11 +2216,11 @@ export async function fetchPublishedPublicNews(
   const supabase = getClient(client);
 
   try {
-    // 1. Fetch live news items from public.news_items
+    // 1. Fetch live published news items from public.news_items
     let newsQuery = supabase
       .from('news_items')
       .select('*')
-      .in('status', ['published', 'collected'])
+      .eq('status', 'published')
       .order('published_at', { ascending: false });
 
     if (options?.categorySlug && options.categorySlug !== 'all') {

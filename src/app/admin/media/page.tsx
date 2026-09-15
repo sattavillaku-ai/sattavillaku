@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Image as ImageIcon,
   UploadCloud,
@@ -14,10 +14,13 @@ import {
   AlertCircle,
   HardDrive,
   ShieldAlert,
-  Info
+  Info,
+  CheckCircle2,
+  Plus
 } from 'lucide-react';
 import { Media } from '@/types';
 import { fetchMediaList, deleteMediaRecord } from '@/lib/cms-service';
+import { openGoogleDrivePicker } from '@/lib/google-drive-client';
 
 export default function AdminMediaPage() {
   const [mediaList, setMediaList] = useState<Media[]>([]);
@@ -45,6 +48,92 @@ export default function AdminMediaPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [possibleDuplicate, setPossibleDuplicate] = useState<Media | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  // Direct Upload from Computer
+  const handleDirectComputerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+    if (!allowed.includes(file.type)) {
+      alert('செல்லுபடியற்ற படம். JPG, PNG, WEBP அல்லது SVG வடிவங்கள் மட்டுமே அனுமதிக்கப்படும்.');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      setToast({ text: 'Cloudinary-ல் படம் பதிவேற்றப்படுகிறது...', type: 'success' });
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('name', file.name.replace(/\.[^/.]+$/, ''));
+      formData.append('category', selectedCategory === 'all' ? 'article' : selectedCategory);
+      formData.append('alt_text', file.name.replace(/\.[^/.]+$/, ''));
+
+      const res = await fetch('/api/admin/media/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'பதிவேற்றம் தோல்வியடைந்தது.');
+      }
+
+      setToast({ text: 'Upload successful! படம் வெற்றிகரமாகப் பதிவேற்றப்பட்டது.', type: 'success' });
+      setTimeout(() => setToast(null), 4000);
+      await loadMedia();
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      setToast({ text: err.message || 'பதிவேற்றத்தில் பிழை ஏற்பட்டது.', type: 'error' });
+      setTimeout(() => setToast(null), 5000);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  // Direct Import from Google Drive Picker
+  const handleDirectDrivePicker = () => {
+    openGoogleDrivePicker({
+      type: 'image',
+      onSelect: async (doc, token) => {
+        try {
+          setIsUploading(true);
+          setToast({ text: 'Google Drive-லிருந்து Cloudinary-ல் நகலெடுக்கப்படுகிறது...', type: 'success' });
+          const res = await fetch('/api/admin/media/google-drive', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fileId: doc.id,
+              fileName: doc.name,
+              mimeType: doc.mimeType,
+              accessToken: token,
+              category: selectedCategory === 'all' ? 'article' : selectedCategory,
+              altText: doc.name,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.error || 'டிரைவ் இறக்குமதி தோல்வியடைந்தது.');
+          }
+          setToast({ text: 'Google Drive படம் வெற்றிகரமாகச் சேமிக்கப்பட்டது!', type: 'success' });
+          setTimeout(() => setToast(null), 4000);
+          await loadMedia();
+        } catch (err: any) {
+          setToast({ text: err.message || 'டிரைவ் இறக்குமதியில் பிழை.', type: 'error' });
+          setTimeout(() => setToast(null), 5000);
+        } finally {
+          setIsUploading(false);
+        }
+      },
+      onError: (err) => {
+        setUploadMode('drive');
+        setShowUploadModal(true);
+        setUploadError(err.message);
+      },
+    });
+  };
 
   const loadMedia = async () => {
     try {
@@ -230,18 +319,77 @@ export default function AdminMediaPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            setUploadError(null);
-            setShowUploadModal(true);
-          }}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-colors shadow-xs cursor-pointer"
-        >
-          <UploadCloud className="w-4 h-4" />
-          <span>புதிய படம் பதிவேற்று / இறக்குமதி</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/svg+xml"
+            className="hidden"
+            onChange={handleDirectComputerUpload}
+          />
+
+          <button
+            type="button"
+            disabled={isUploading}
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+          >
+            {isUploading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <UploadCloud className="w-4 h-4" />
+            )}
+            <span>கணினியிலிருந்து பதிவேற்று (Upload from Computer)</span>
+          </button>
+
+          <button
+            type="button"
+            disabled={isUploading}
+            onClick={handleDirectDrivePicker}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-card border border-border text-foreground hover:bg-muted text-xs font-bold transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+          >
+            <HardDrive className="w-4 h-4 text-primary" />
+            <span>Google Drive இறக்குமதி (Import from Google Drive)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setUploadError(null);
+              setShowUploadModal(true);
+            }}
+            className="p-2 rounded-md border border-border text-muted-foreground hover:text-foreground text-xs cursor-pointer"
+            title="கூடுதல் விவரங்களுடன் பதிவேற்ற"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
       </div>
+
+      {toast && (
+        <div
+          className={`p-3.5 rounded-md text-xs font-bold flex items-center justify-between gap-2 animate-in fade-in ${
+            toast.type === 'success'
+              ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+              : 'bg-destructive/10 border border-destructive/20 text-destructive'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {toast.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
+            )}
+            <span>{toast.text}</span>
+          </div>
+          <button
+            onClick={() => setToast(null)}
+            className="text-xs opacity-70 hover:opacity-100 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="p-3.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2 animate-in fade-in">

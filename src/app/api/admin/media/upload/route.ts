@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import crypto from 'crypto';
+import { uploadImageBufferToCloudinary } from '@/lib/cloudinary';
 
 export async function POST(request: Request) {
   try {
@@ -44,54 +44,44 @@ export async function POST(request: Request) {
 
     // 3. Handle File Upload (Cloudinary)
     if (file && file.size > 0) {
+      // Validate allowed image MIME types
+      const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'image/gif'];
       mimeType = file.type || 'image/jpeg';
       sizeBytes = file.size;
 
-      const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-      const apiKey = process.env.CLOUDINARY_API_KEY;
-      const apiSecret = process.env.CLOUDINARY_API_SECRET;
+      if (!allowedMimes.includes(mimeType.toLowerCase())) {
+        return NextResponse.json(
+          { error: 'செல்லுபடியற்ற கோப்பு வகை. JPG, PNG, WEBP அல்லது SVG வடிவங்கள் மட்டுமே அனுமதிக்கப்படும்.' },
+          { status: 400 }
+        );
+      }
 
-      if (cloudName && apiKey && apiSecret) {
-        // Prepare Cloudinary signed upload
-        const timestamp = Math.floor(Date.now() / 1000);
-        const folder = 'sattavilakku';
-        const signatureString = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
-        const signature = crypto.createHash('sha1').update(signatureString).digest('hex');
+      // Validate file size (max 10MB)
+      const maxSizeBytes = 10 * 1024 * 1024;
+      if (file.size > maxSizeBytes) {
+        return NextResponse.json(
+          { error: 'படத்தின் அளவு 10MB-க்கு மிகாமல் இருக்க வேண்டும்.' },
+          { status: 400 }
+        );
+      }
 
-        const cldBody = new FormData();
-        cldBody.append('file', file);
-        cldBody.append('api_key', apiKey);
-        cldBody.append('timestamp', timestamp.toString());
-        cldBody.append('signature', signature);
-        cldBody.append('folder', folder);
-
-        const cldRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-          method: 'POST',
-          body: cldBody,
+      try {
+        const fileBuffer = Buffer.from(await file.arrayBuffer());
+        const cldResult = await uploadImageBufferToCloudinary(fileBuffer, {
+          folder: 'sattavilakku/images',
+          tags: ['sattavilakku', category],
         });
 
-        const cldData = await cldRes.json();
-
-        if (!cldRes.ok || !cldData.secure_url) {
-          console.error('Cloudinary upload error:', cldData);
-          return NextResponse.json(
-            { error: cldData.error?.message || 'Cloudinary பதிவேற்றத்தில் பிழை ஏற்பட்டது.' },
-            { status: 502 }
-          );
-        }
-
-        resultUrl = cldData.secure_url;
-        publicId = cldData.public_id;
-        width = cldData.width || null;
-        height = cldData.height || null;
-        if (cldData.bytes) sizeBytes = cldData.bytes;
-      } else {
+        resultUrl = cldResult.secure_url;
+        publicId = cldResult.public_id;
+        width = cldResult.width || null;
+        height = cldResult.height || null;
+        if (cldResult.bytes) sizeBytes = cldResult.bytes;
+      } catch (cldErr: any) {
+        console.error('Cloudinary upload error:', cldErr);
         return NextResponse.json(
-          {
-            error:
-              'Cloudinary சர்வர் விவரங்கள் (.env) கட்டமைக்கப்படவில்லை. தயவுசெய்து CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, மற்றும் CLOUDINARY_API_SECRET அமைக்கவும், அல்லது படத்தின் நேரடி இணைய முகவரியை (URL) உள்ளிடவும்.',
-          },
-          { status: 400 }
+          { error: `Cloudinary பதிவேற்றத்தில் பிழை: ${cldErr.message || 'தெரியாத பிழை'}` },
+          { status: 502 }
         );
       }
     } else if (directUrl && directUrl.trim()) {

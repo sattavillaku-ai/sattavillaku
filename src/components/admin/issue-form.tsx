@@ -18,10 +18,12 @@ import {
   AlertCircle,
   Sparkles,
   HardDrive,
+  ImageIcon,
 } from 'lucide-react';
 import { Issue, TableOfContentItem, IssueStatus } from '@/types';
 import { saveIssue, generateSlug } from '@/lib/cms-service';
 import { MediaPickerModal } from '@/components/admin/media-picker-modal';
+import { openGoogleDrivePicker } from '@/lib/google-drive-client';
 
 interface IssueFormProps {
   initialIssue?: Issue;
@@ -73,11 +75,14 @@ export function IssueForm({ initialIssue, isEditing = false }: IssueFormProps) {
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
   const [uploadPdfError, setUploadPdfError] = useState('');
   const [uploadPdfSuccess, setUploadPdfSuccess] = useState('');
+  const [pdfUploadedCoverPrompt, setPdfUploadedCoverPrompt] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const pdfInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   // TOC Handlers
   const handleAddTocRow = () => {
@@ -135,16 +140,7 @@ export function IssueForm({ initialIssue, isEditing = false }: IssueFormProps) {
         setPageCount(data.pageCount);
       }
       setUploadPdfSuccess(`PDF வெற்றிகரமாகப் பதிவேற்றப்பட்டது! (${data.pageCount ? `${data.pageCount} பக்கங்கள்` : file.name})`);
-
-      // Prompt admin to choose/upload cover image for this magazine
-      setTimeout(() => {
-        const wantCover = window.confirm(
-          `இதழ் PDF வெற்றிகரமாகப் பதிவேற்றப்பட்டது (${data.pageCount ? `${data.pageCount} பக்கங்கள்` : file.name})!\n\nதற்போது இந்த இதழுக்கான அட்டைப்படத்தைத் (Cover Image) தேர்ந்தெடுக்க விரும்புகிறீர்களா?`
-        );
-        if (wantCover) {
-          setShowMediaPicker(true);
-        }
-      }, 500);
+      setPdfUploadedCoverPrompt(true);
     } catch (err: any) {
       console.error('PDF upload error:', err);
       setUploadPdfError(err.message || 'PDF பதிவேற்றத்தில் பிழை ஏற்பட்டது.');
@@ -190,22 +186,98 @@ export function IssueForm({ initialIssue, isEditing = false }: IssueFormProps) {
         setPageCount(data.pageCount);
       }
       setUploadPdfSuccess(`கூகுள் டிரைவிலிருந்து PDF வெற்றிகரமாக நகலெடுக்கப்பட்டது! (${data.pageCount ? `${data.pageCount} பக்கங்கள்` : data.fileName})`);
-
-      // Prompt admin to choose/upload cover image for this magazine
-      setTimeout(() => {
-        const wantCover = window.confirm(
-          `கூகுள் டிரைவ் PDF வெற்றிகரமாக நகலெடுக்கப்பட்டது (${data.pageCount ? `${data.pageCount} பக்கங்கள்` : data.fileName})!\n\nதற்போது இந்த இதழுக்கான அட்டைப்படத்தைத் (Cover Image) தேர்ந்தெடுக்க விரும்புகிறீர்களா?`
-        );
-        if (wantCover) {
-          setShowMediaPicker(true);
-        }
-      }, 500);
+      setPdfUploadedCoverPrompt(true);
     } catch (err: any) {
       console.error('Drive PDF import error:', err);
       setUploadPdfError(err.message || 'கூகுள் டிரைவ் PDF இறக்குமதியில் பிழை ஏற்பட்டது.');
     } finally {
       setIsUploadingPdf(false);
     }
+  };
+
+  // Open Google Drive Picker for PDF
+  const handleOpenDrivePdfPicker = () => {
+    openGoogleDrivePicker({
+      type: 'pdf',
+      onSelect: async (doc, token) => {
+        await handleDrivePdfImport(doc.id, doc.name, token);
+      },
+      onError: (err) => {
+        const manualId = prompt(`Google Drive PDF கோப்பு ஐடியை (File ID) உள்ளிடவும்:\n(${err.message})`);
+        if (!manualId) return;
+        const manualToken = prompt('Google OAuth Access Token உள்ளிடவும்:');
+        if (!manualToken) return;
+        handleDrivePdfImport(manualId, `issue-${issueNumber}.pdf`, manualToken);
+      },
+    });
+  };
+
+  // Direct Cover Upload from Computer (to Cloudinary)
+  const handleDirectCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingCover(true);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('name', `cover-issue-${issueNumber}`);
+      formData.append('category', 'cover');
+      formData.append('alt_text', `இதழ் ${issueNumber} அட்டைப்படம்`);
+
+      const res = await fetch('/api/admin/media/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'அட்டைப்படப் பதிவேற்றம் தோல்வியடைந்தது.');
+      }
+      setCoverUrl(data.media.url);
+      setPdfUploadedCoverPrompt(false);
+    } catch (err: any) {
+      alert(err.message || 'அட்டைப்படத்தைப் பதிவேற்ற முடியவில்லை.');
+    } finally {
+      setIsUploadingCover(false);
+      if (coverInputRef.current) coverInputRef.current.value = '';
+    }
+  };
+
+  // Direct Cover Import from Google Drive (to Cloudinary)
+  const handleDirectCoverDrivePicker = () => {
+    openGoogleDrivePicker({
+      type: 'image',
+      onSelect: async (doc, token) => {
+        try {
+          setIsUploadingCover(true);
+          const res = await fetch('/api/admin/media/google-drive', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fileId: doc.id,
+              fileName: doc.name,
+              mimeType: doc.mimeType,
+              accessToken: token,
+              category: 'cover',
+              altText: `இதழ் ${issueNumber} அட்டைப்படம்`,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.error || 'Google Drive அட்டைப்பட இறக்குமதி தோல்வியடைந்தது.');
+          }
+          setCoverUrl(data.media.url);
+          setPdfUploadedCoverPrompt(false);
+        } catch (err: any) {
+          alert(err.message || 'டிரைவ் அட்டைப்பட இறக்குமதியில் பிழை.');
+        } finally {
+          setIsUploadingCover(false);
+        }
+      },
+      onError: (err) => {
+        alert(err.message);
+      },
+    });
   };
 
   // Auto slug generation
@@ -554,7 +626,7 @@ export function IssueForm({ initialIssue, isEditing = false }: IssueFormProps) {
             </div>
           </div>
 
-          {/* Cover Image Upload (Cloudinary via MediaPickerModal) */}
+          {/* Cover Image Upload (Cloudinary via MediaPickerModal, Local Computer, or Google Drive) */}
           <div className="bg-card border border-border rounded-lg p-5 shadow-2xs space-y-3">
             <div className="flex items-center justify-between border-b border-border pb-2">
               <h3 className="text-sm font-bold text-foreground">
@@ -566,9 +638,45 @@ export function IssueForm({ initialIssue, isEditing = false }: IssueFormProps) {
                 className="text-xs text-primary hover:underline font-bold flex items-center gap-1 cursor-pointer"
               >
                 <UploadCloud className="w-3.5 h-3.5" />
-                <span>தேர்வு செய்</span>
+                <span>மீடியா நூலகம்</span>
               </button>
             </div>
+
+            {/* Prompt shown automatically when PDF has just been uploaded */}
+            {pdfUploadedCoverPrompt && (
+              <div className="p-3.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-xs space-y-2 animate-in fade-in">
+                <div className="flex items-center gap-2 font-bold text-emerald-800 dark:text-emerald-300">
+                  <CheckCircle className="w-4 h-4 shrink-0" />
+                  <span>PDF வெற்றிகரமாகப் பதிவேற்றப்பட்டது!</span>
+                </div>
+                <p className="text-muted-foreground text-[11px]">
+                  தற்போது இந்த இதழுக்கான அட்டைப்படத்தைத் (Cover Image) தேர்ந்தெடுக்கவும். கீழே உள்ள விருப்பங்களில் ஒன்றைப் பயன்படுத்தவும்:
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => coverInputRef.current?.click()}
+                    className="px-2.5 py-1 rounded bg-primary text-primary-foreground font-semibold text-[11px] hover:opacity-90 cursor-pointer"
+                  >
+                    கணினியிலிருந்து பதிவேற்று
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDirectCoverDrivePicker}
+                    className="px-2.5 py-1 rounded bg-secondary text-secondary-foreground font-semibold text-[11px] hover:opacity-90 cursor-pointer"
+                  >
+                    Google Drive
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowMediaPicker(true)}
+                    className="px-2.5 py-1 rounded border border-border bg-card font-semibold text-[11px] hover:bg-muted cursor-pointer"
+                  >
+                    மீடியா நூலகம்
+                  </button>
+                </div>
+              </div>
+            )}
 
             {coverUrl && (
               <div className="relative aspect-3/4 rounded-md overflow-hidden border border-border bg-muted group">
@@ -587,14 +695,54 @@ export function IssueForm({ initialIssue, isEditing = false }: IssueFormProps) {
               />
             </div>
 
-            <button
-              type="button"
-              onClick={() => setShowMediaPicker(true)}
-              className="w-full py-2 px-3 rounded-md border border-dashed border-border hover:bg-muted text-xs font-bold text-primary flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <UploadCloud className="w-4 h-4" />
-              <span>மீடியா நூலகம் / Cloudinary பதிவேற்றம்</span>
-            </button>
+            {/* Hidden file input for cover */}
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleDirectCoverUpload}
+            />
+
+            {/* Three Cover Upload Action Buttons */}
+            <div className="space-y-2 pt-1">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  disabled={isUploadingCover}
+                  onClick={() => coverInputRef.current?.click()}
+                  className="py-2 px-2.5 rounded-md border border-border hover:bg-muted text-xs font-bold text-foreground flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  title="கணினியிலிருந்து அட்டைப்படம் பதிவேற்றவும்"
+                >
+                  {isUploadingCover ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <UploadCloud className="w-3.5 h-3.5 text-primary" />
+                  )}
+                  <span>கணினி படம்</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isUploadingCover}
+                  onClick={handleDirectCoverDrivePicker}
+                  className="py-2 px-2.5 rounded-md border border-border hover:bg-muted text-xs font-bold text-foreground flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  title="Google Drive-லிருந்து அட்டைப்படம் இறக்குமதி செய்"
+                >
+                  <HardDrive className="w-3.5 h-3.5 text-blue-500" />
+                  <span>Google Drive</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowMediaPicker(true)}
+                className="w-full py-2 px-3 rounded-md border border-dashed border-border hover:bg-muted text-xs font-bold text-primary flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <UploadCloud className="w-4 h-4" />
+                <span>மீடியா நூலகம் / ஏற்கனவே உள்ள படம்</span>
+              </button>
+            </div>
           </div>
 
           {/* PDF File Upload (Supabase Storage Private Bucket) */}
@@ -665,17 +813,11 @@ export function IssueForm({ initialIssue, isEditing = false }: IssueFormProps) {
               <button
                 type="button"
                 disabled={isUploadingPdf}
-                onClick={() => {
-                  const driveId = prompt('Google Drive PDF கோப்பு ஐடியை (File ID) உள்ளிடவும்:');
-                  if (!driveId) return;
-                  const token = prompt('Google OAuth Access Token உள்ளிடவும்:');
-                  if (!token) return;
-                  handleDrivePdfImport(driveId, `issue-${issueNumber}.pdf`, token);
-                }}
+                onClick={handleOpenDrivePdfPicker}
                 className="py-2 px-3 rounded-md border border-dashed border-border hover:bg-muted text-xs font-bold text-primary flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
-                <HardDrive className="w-4 h-4" />
-                <span>Google Drive PDF இறக்குமதி</span>
+                <HardDrive className="w-4 h-4 text-blue-500" />
+                <span>Google Drive PDF</span>
               </button>
             </div>
 

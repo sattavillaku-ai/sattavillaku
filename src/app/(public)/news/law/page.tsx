@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Scale, Filter, BookOpen, AlertCircle, ArrowLeft } from 'lucide-react';
-import { dataService } from '@/lib/data-service';
 import { fetchPublishedPublicNews } from '@/lib/cms-service';
 import { NewsItem } from '@/types';
 import { NewsCard } from '@/components/news-card';
@@ -19,15 +18,11 @@ export default function LawNewsPage() {
       try {
         const realNews = await fetchPublishedPublicNews({ categorySlug: 'law' });
         if (isMounted) {
-          if (realNews && realNews.length > 0) {
-            setLawNews(realNews);
-          } else {
-            setLawNews(dataService.getNewsByCategory('law'));
-          }
+          setLawNews(realNews || []);
         }
       } catch (err) {
         console.error('Error fetching published law news:', err);
-        if (isMounted) setLawNews(dataService.getNewsByCategory('law'));
+        if (isMounted) setLawNews([]);
       }
     }
     load();

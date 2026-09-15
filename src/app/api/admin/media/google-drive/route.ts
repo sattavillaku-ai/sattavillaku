@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import crypto from 'crypto';
+import { uploadImageBufferToCloudinary } from '@/lib/cloudinary';
 
 interface GoogleDriveImportBody {
   fileId: string;
@@ -81,44 +81,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Upload to Cloudinary (Server-Only signed upload)
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-    const apiKey = process.env.CLOUDINARY_API_KEY;
-    const apiSecret = process.env.CLOUDINARY_API_SECRET;
-
-    if (!cloudName || !apiKey || !apiSecret) {
+    // 4. Upload to Cloudinary using official SDK
+    let cldData;
+    try {
+      cldData = await uploadImageBufferToCloudinary(buffer, {
+        folder: 'sattavilakku/images',
+        tags: ['sattavilakku', 'drive-import', category],
+      });
+    } catch (cldErr: any) {
+      console.error('Cloudinary upload from Google Drive error:', cldErr);
       return NextResponse.json(
-        { error: 'Cloudinary சேமிப்பக நற்சான்றுகள் (.env) அமைக்கப்படவில்லை.' },
-        { status: 500 }
-      );
-    }
-
-    const timestamp = Math.floor(Date.now() / 1000);
-    const folder = 'sattavilakku';
-    const signatureString = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
-    const signature = crypto.createHash('sha1').update(signatureString).digest('hex');
-
-    // Convert buffer to base64 data URI for Cloudinary multipart/body upload
-    const base64Data = `data:${mimeType || 'image/jpeg'};base64,${buffer.toString('base64')}`;
-
-    const cldFormData = new FormData();
-    cldFormData.append('file', base64Data);
-    cldFormData.append('api_key', apiKey);
-    cldFormData.append('timestamp', timestamp.toString());
-    cldFormData.append('signature', signature);
-    cldFormData.append('folder', folder);
-
-    const cldRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-      method: 'POST',
-      body: cldFormData,
-    });
-
-    const cldData = await cldRes.json();
-
-    if (!cldRes.ok || !cldData.secure_url) {
-      console.error('Cloudinary upload from Google Drive error:', cldData);
-      return NextResponse.json(
-        { error: 'Cloudinary-ல் படத்தை சேமிக்க இயலவில்லை.' },
+        { error: `Cloudinary-ல் படத்தை சேமிக்க இயலவில்லை: ${cldErr.message || 'பிழை'}` },
         { status: 502 }
       );
     }

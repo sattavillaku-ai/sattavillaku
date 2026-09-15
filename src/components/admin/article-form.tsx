@@ -21,7 +21,8 @@ import {
   Sparkles,
   BookOpen,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  HardDrive
 } from 'lucide-react';
 import { Article, Author, Category, Issue } from '@/types';
 import {
@@ -32,6 +33,7 @@ import {
   generateSlug
 } from '@/lib/cms-service';
 import { MediaPickerModal } from '@/components/admin/media-picker-modal';
+import { openGoogleDrivePicker } from '@/lib/google-drive-client';
 
 interface ArticleFormProps {
   initialArticle?: Article;
@@ -149,6 +151,76 @@ export function ArticleForm({ initialArticle, isEditing = false }: ArticleFormPr
       textarea.focus();
       textarea.setSelectionRange(start + before.length, start + replacement.length - after.length);
     }, 0);
+  };
+
+  const [isUploadingHero, setIsUploadingHero] = useState(false);
+  const heroFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Direct Hero Upload from Computer (to Cloudinary)
+  const handleDirectHeroUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingHero(true);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('name', `hero-${title ? title.slice(0, 30) : 'article'}`);
+      formData.append('category', 'article');
+      formData.append('alt_text', title || 'கட்டுரை படம்');
+
+      const res = await fetch('/api/admin/media/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'படப் பதிவேற்றம் தோல்வியடைந்தது.');
+      }
+      setHeroImage(data.media.url);
+      setHeroMediaId(data.media.id);
+    } catch (err: any) {
+      alert(err.message || 'படத்தைப் பதிவேற்ற முடியவில்லை.');
+    } finally {
+      setIsUploadingHero(false);
+      if (heroFileInputRef.current) heroFileInputRef.current.value = '';
+    }
+  };
+
+  // Direct Hero Import from Google Drive (to Cloudinary)
+  const handleDirectHeroDrivePicker = () => {
+    openGoogleDrivePicker({
+      type: 'image',
+      onSelect: async (doc, token) => {
+        try {
+          setIsUploadingHero(true);
+          const res = await fetch('/api/admin/media/google-drive', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fileId: doc.id,
+              fileName: doc.name,
+              mimeType: doc.mimeType,
+              accessToken: token,
+              category: 'article',
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.error || 'Google Drive-லிருந்து படம் இறக்குமதி தோல்வியடைந்தது.');
+          }
+          setHeroImage(data.media.url);
+          setHeroMediaId(data.media.id);
+        } catch (err: any) {
+          alert(err.message || 'Google Drive-லிருந்து படத்தை இறக்குமதி செய்ய முடியவில்லை.');
+        } finally {
+          setIsUploadingHero(false);
+        }
+      },
+      onError: (err) => {
+        alert(`Google Drive Picker பிழை: ${err.message}`);
+      },
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -535,17 +607,19 @@ export function ArticleForm({ initialArticle, isEditing = false }: ArticleFormPr
 
           {/* Hero Image */}
           <div className="bg-card border border-border rounded-lg p-5 shadow-2xs space-y-3">
-            <h3 className="text-sm font-bold text-foreground border-b border-border pb-2 flex items-center justify-between">
-              <span>முக்கியப் படம் (Hero Image)</span>
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <h3 className="text-sm font-bold text-foreground">
+                முக்கியப் படம் (Hero Image)
+              </h3>
               <button
                 type="button"
                 onClick={() => setShowMediaPicker(true)}
                 className="text-xs text-primary hover:underline font-bold flex items-center gap-1 cursor-pointer"
               >
                 <UploadCloud className="w-3.5 h-3.5" />
-                <span>நூலகத்திலிருந்து தேர்வு</span>
+                <span>மீடியா நூலகம்</span>
               </button>
-            </h3>
+            </div>
 
             {heroImage && (
               <div className="aspect-16/10 rounded-md overflow-hidden border border-border bg-muted relative group">
@@ -553,25 +627,68 @@ export function ArticleForm({ initialArticle, isEditing = false }: ArticleFormPr
               </div>
             )}
 
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-muted-foreground">படத்தின் நேரடி URL:</label>
+              <input
+                type="url"
+                value={heroImage}
+                onChange={(e) => {
+                  setHeroImage(e.target.value);
+                  setHeroMediaId(undefined);
+                }}
+                className="w-full px-2.5 py-1.5 rounded-xs border border-border bg-background text-foreground text-xs font-sans"
+                placeholder="https://images.unsplash.com/..."
+              />
+            </div>
+
+            {/* Hidden file input for hero */}
             <input
-              type="url"
-              value={heroImage}
-              onChange={(e) => {
-                setHeroImage(e.target.value);
-                setHeroMediaId(undefined);
-              }}
-              className="w-full px-2.5 py-1.5 rounded-xs border border-border bg-background text-foreground text-xs font-sans"
-              placeholder="https://images.unsplash.com/..."
+              ref={heroFileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleDirectHeroUpload}
             />
 
-            <button
-              type="button"
-              onClick={() => setShowMediaPicker(true)}
-              className="w-full py-2 px-3 rounded-md border border-dashed border-border hover:bg-muted text-xs font-bold text-primary flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <UploadCloud className="w-4 h-4" />
-              <span>படத்தைத் தேர்வுசெய் / பதிவேற்று</span>
-            </button>
+            {/* Three Actions: Computer, Google Drive, Media Library */}
+            <div className="space-y-2 pt-1">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  disabled={isUploadingHero}
+                  onClick={() => heroFileInputRef.current?.click()}
+                  className="py-2 px-2.5 rounded-md border border-border hover:bg-muted text-xs font-bold text-foreground flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  title="கணினியிலிருந்து படம் பதிவேற்றவும்"
+                >
+                  {isUploadingHero ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <UploadCloud className="w-3.5 h-3.5 text-primary" />
+                  )}
+                  <span>கணினி படம்</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isUploadingHero}
+                  onClick={handleDirectHeroDrivePicker}
+                  className="py-2 px-2.5 rounded-md border border-border hover:bg-muted text-xs font-bold text-foreground flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  title="Google Drive-லிருந்து படம் இறக்குமதி செய்"
+                >
+                  <HardDrive className="w-3.5 h-3.5 text-blue-500" />
+                  <span>Google Drive</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowMediaPicker(true)}
+                className="w-full py-2 px-3 rounded-md border border-dashed border-border hover:bg-muted text-xs font-bold text-primary flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <UploadCloud className="w-4 h-4" />
+                <span>மீடியா நூலகம் / ஏற்கனவே உள்ள படம்</span>
+              </button>
+            </div>
           </div>
 
           {/* Tags */}

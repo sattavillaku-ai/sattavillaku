@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Newspaper, Flame, Clock, Scale, Landmark, MapPin, Globe, Filter } from 'lucide-react';
-import { dataService } from '@/lib/data-service';
 import { fetchPublishedPublicNews } from '@/lib/cms-service';
 import { NewsItem } from '@/types';
 import { NewsCard } from '@/components/news-card';
@@ -19,15 +18,11 @@ export default function DailyNewsPage() {
       try {
         const realNews = await fetchPublishedPublicNews();
         if (isMounted) {
-          if (realNews && realNews.length > 0) {
-            setAllNews(realNews);
-          } else {
-            setAllNews(dataService.getPublishedNews());
-          }
+          setAllNews(realNews || []);
         }
       } catch (err) {
         console.error('Error fetching published news:', err);
-        if (isMounted) setAllNews(dataService.getPublishedNews());
+        if (isMounted) setAllNews([]);
       }
     }
     load();

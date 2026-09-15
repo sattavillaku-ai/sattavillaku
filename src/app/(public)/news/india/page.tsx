@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Globe, ArrowLeft } from 'lucide-react';
-import { dataService } from '@/lib/data-service';
 import { fetchPublishedPublicNews } from '@/lib/cms-service';
 import { NewsItem } from '@/types';
 import { NewsCard } from '@/components/news-card';
@@ -18,15 +17,11 @@ export default function IndiaNewsPage() {
       try {
         const realNews = await fetchPublishedPublicNews({ categorySlug: 'india' });
         if (isMounted) {
-          if (realNews && realNews.length > 0) {
-            setIndiaNews(realNews);
-          } else {
-            setIndiaNews(dataService.getNewsByCategory('india'));
-          }
+          setIndiaNews(realNews || []);
         }
       } catch (err) {
         console.error('Error fetching published India news:', err);
-        if (isMounted) setIndiaNews(dataService.getNewsByCategory('india'));
+        if (isMounted) setIndiaNews([]);
       }
     }
     load();

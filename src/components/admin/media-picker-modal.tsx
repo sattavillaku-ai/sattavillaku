@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Media } from '@/types';
 import { fetchMediaList } from '@/lib/cms-service';
+import { openGoogleDrivePicker } from '@/lib/google-drive-client';
 
 interface MediaPickerModalProps {
   isOpen: boolean;
@@ -212,6 +213,47 @@ export function MediaPickerModal({
     } finally {
       setIsDriveImporting(false);
     }
+  };
+
+  const handleOpenGooglePicker = () => {
+    openGoogleDrivePicker({
+      type: 'image',
+      onSelect: async (doc, token) => {
+        try {
+          setIsDriveImporting(true);
+          setDriveError(null);
+          const res = await fetch('/api/admin/media/google-drive', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fileId: doc.id,
+              fileName: doc.name,
+              mimeType: doc.mimeType,
+              accessToken: token,
+              category: uploadCategory,
+              altText: doc.name,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.error || 'கூகுள் டிரைவிலிருந்து படத்தைப் பெற முடியவில்லை.');
+          }
+          onSelect({
+            url: data.media.url,
+            mediaId: data.media.id,
+            altText: data.media.alt_text || doc.name,
+          });
+          onClose();
+        } catch (err: any) {
+          setDriveError(err.message || 'கூகுள் டிரைவ் இறக்குமதியில் பிழை.');
+        } finally {
+          setIsDriveImporting(false);
+        }
+      },
+      onError: (err) => {
+        setDriveError(err.message);
+      },
+    });
   };
 
   const handleDirectUrlSubmit = (e: React.FormEvent) => {
@@ -559,6 +601,27 @@ export function MediaPickerModal({
                   <span>{driveError}</span>
                 </div>
               )}
+
+              <div className="p-4 rounded-lg bg-card border-2 border-dashed border-primary/40 text-center space-y-2">
+                <HardDrive className="w-8 h-8 text-primary mx-auto" />
+                <h4 className="text-xs font-bold text-foreground">Google Picker மூலம் படத்தைத் தேர்வு செய்க</h4>
+                <p className="text-[11px] text-muted-foreground">உங்கள் Google Drive கணக்கிலிருந்து நேரடியாகப் படங்களைத் தேர்ந்தெடுத்து Cloudinary-ல் சேமிக்கலாம்.</p>
+                <button
+                  type="button"
+                  disabled={isDriveImporting}
+                  onClick={handleOpenGooglePicker}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  {isDriveImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <HardDrive className="w-4 h-4" />}
+                  <span>Google Drive Picker திற (Open Google Picker)</span>
+                </button>
+              </div>
+
+              <div className="relative border-t border-border my-3">
+                <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-[10px] text-muted-foreground font-bold uppercase">
+                  அல்லது கைமுறையாக விவரங்களை உள்ளிடவும்
+                </span>
+              </div>
 
               <form onSubmit={handleDriveImportSubmit} className="space-y-4">
                 <div className="space-y-1.5 text-xs">

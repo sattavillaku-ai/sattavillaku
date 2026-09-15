@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { MapPin, ArrowLeft } from 'lucide-react';
-import { dataService } from '@/lib/data-service';
 import { fetchPublishedPublicNews } from '@/lib/cms-service';
 import { NewsItem } from '@/types';
 import { NewsCard } from '@/components/news-card';
@@ -18,15 +17,11 @@ export default function TamilNaduNewsPage() {
       try {
         const realNews = await fetchPublishedPublicNews({ categorySlug: 'tamil-nadu' });
         if (isMounted) {
-          if (realNews && realNews.length > 0) {
-            setTnNews(realNews);
-          } else {
-            setTnNews(dataService.getNewsByCategory('tamil-nadu'));
-          }
+          setTnNews(realNews || []);
         }
       } catch (err) {
         console.error('Error fetching published Tamil Nadu news:', err);
-        if (isMounted) setTnNews(dataService.getNewsByCategory('tamil-nadu'));
+        if (isMounted) setTnNews([]);
       }
     }
     load();
