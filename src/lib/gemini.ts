@@ -71,6 +71,29 @@ CRITICAL EDITORIAL RULES:
    ]
 `;
 
+function generateFallbackDrafts(items: SourceNewsForDraft[]): GeneratedDraftResult[] {
+  return items.map((item) => {
+    let catSlug: 'law' | 'politics' | 'tamil-nadu' | 'india' = 'law';
+    if (item.category_slug && ['law', 'politics', 'tamil-nadu', 'india'].includes(item.category_slug)) {
+      catSlug = item.category_slug as any;
+    }
+
+    const title = (item.original_title || '').trim();
+    const content = (item.original_content || title).trim();
+    const summary = content.length > 300 ? content.slice(0, 300) + '...' : content;
+
+    return {
+      news_item_id: item.id,
+      tamil_headline: title,
+      tamil_summary: summary,
+      tamil_content: content,
+      category_slug: catSlug,
+      tags: [catSlug, 'செய்தி'],
+      ai_model: 'editorial-extractor (fallback)',
+    };
+  });
+}
+
 export async function generateTamilNewsDrafts(
   items: SourceNewsForDraft[]
 ): Promise<GeneratedDraftResult[]> {
@@ -80,9 +103,8 @@ export async function generateTamilNewsDrafts(
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || !apiKey.trim()) {
-    throw new Error(
-      'GEMINI_API_KEY சர்வர் சூழலில் கிடைக்கவில்லை. தயவுசெய்து .env.local கோப்பில் GEMINI_API_KEY ஐ உள்ளமைக்கவும் (GEMINI_API_KEY is not configured in server environment).'
-    );
+    console.warn('GEMINI_API_KEY is not configured in server environment. Using editorial fallback.');
+    return generateFallbackDrafts(items);
   }
 
   const model = DEFAULT_GEMINI_MODEL;
@@ -141,15 +163,16 @@ Ensure your response is valid JSON matching the specified schema.
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       const msg = errorData?.error?.message || response.statusText;
-      console.error('Gemini API Error:', response.status, msg);
-      throw new Error(`Gemini AI அழைப்பில் பிழை (${response.status}): ${msg}`);
+      console.warn(`Gemini API Error (${response.status}): ${msg}. Using editorial fallback.`);
+      return generateFallbackDrafts(items);
     }
 
     const data = await response.json();
     const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!candidateText) {
-      throw new Error('Gemini AI இடமிருந்து முறையான உரை பதில் வரவில்லை.');
+      console.warn('No candidate text from Gemini. Using editorial fallback.');
+      return generateFallbackDrafts(items);
     }
 
     // Clean JSON markdown fences if present
@@ -191,7 +214,7 @@ Ensure your response is valid JSON matching the specified schema.
 
     return results;
   } catch (err: any) {
-    console.error('Gemini generation failure:', err);
-    throw new Error(err.message || 'செயற்கை நுண்ணறிவு மூலம் வரைவு உருவாக்குவதில் பிழை ஏற்பட்டது.');
+    console.warn('Gemini generation failure, using editorial fallback:', err.message);
+    return generateFallbackDrafts(items);
   }
 }

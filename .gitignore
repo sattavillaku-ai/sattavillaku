@@ -49,3 +49,5 @@ venv/
 .venv/
 tamil-news-api/.env
 !tamil-news-api/.env.example
+
+.vercel
