@@ -40,3 +40,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+tamil-news-api/.env
+!tamil-news-api/.env.example

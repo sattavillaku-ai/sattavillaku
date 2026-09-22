@@ -1,0 +1,4 @@
+"""Routes module for FastAPI endpoints."""
+from .news import router as news_router
+
+__all__ = ["news_router"]
